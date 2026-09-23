@@ -1,0 +1,139 @@
+[
+  {
+    "id": "telemetry-1",
+    "incident": {
+      "description": "Laptop slow with sustained CPU load",
+      "telemetry": {
+        "cpu_percent": 96
+      }
+    },
+    "expected_category": "cpu_saturation",
+    "expected_decision": "LOCAL"
+  },
+  {
+    "id": "telemetry-2",
+    "incident": {
+      "description": "Apps freeze with high memory usage",
+      "telemetry": {
+        "memory_percent": 94
+      }
+    },
+    "expected_category": "memory_pressure",
+    "expected_decision": "LOCAL"
+  },
+  {
+    "id": "telemetry-3",
+    "incident": {
+      "description": "Low disk space prevents updates",
+      "telemetry": {
+        "disk_percent": 97
+      }
+    },
+    "expected_category": "disk_pressure",
+    "expected_decision": "LOCAL"
+  },
+  {
+    "id": "telemetry-4",
+    "incident": {
+      "description": "Laptop overheating under load",
+      "telemetry": {
+        "temperature_c": 91
+      }
+    },
+    "expected_category": "thermal_throttling",
+    "expected_decision": "LOCAL"
+  },
+  {
+    "id": "telemetry-5",
+    "incident": {
+      "description": "Battery runtime is very short",
+      "telemetry": {
+        "battery_health_percent": 62
+      }
+    },
+    "expected_category": "battery_degradation",
+    "expected_decision": "LOCAL"
+  },
+  {
+    "id": "telemetry-6",
+    "incident": {
+      "description": "Weak Wi-Fi keeps disconnecting",
+      "telemetry": {
+        "wifi_signal_percent": 25
+      }
+    },
+    "expected_category": "wifi_connectivity",
+    "expected_decision": "LOCAL"
+  },
+  {
+    "id": "application_crash",
+    "incident": {
+      "description": "Spreadsheet application crashes repeatedly when opening a file",
+      "high_risk": false
+    },
+    "expected_category": "application_crash",
+    "expected_decision": "LOCAL"
+  },
+  {
+    "id": "startup",
+    "incident": {
+      "description": "Laptop boot loop with recovery key request",
+      "high_risk": true
+    },
+    "expected_category": "startup",
+    "expected_decision": "ESCALATE"
+  },
+  {
+    "id": "dns_network",
+    "incident": {
+      "description": "Wi-Fi connected but DNS hostname resolution fails",
+      "high_risk": false
+    },
+    "expected_category": "dns_network",
+    "expected_decision": "LOCAL"
+  },
+  {
+    "id": "specialist_requested",
+    "incident": {
+      "description": "Laptop CPU is very busy",
+      "telemetry": {
+        "cpu_percent": 96
+      },
+      "specialist_requested": true
+    },
+    "expected_category": "cpu_saturation",
+    "expected_decision": "ESCALATE"
+  },
+  {
+    "id": "troubleshooting_failed",
+    "incident": {
+      "description": "Laptop CPU is very busy",
+      "telemetry": {
+        "cpu_percent": 96
+      },
+      "troubleshooting_failed": true
+    },
+    "expected_category": "cpu_saturation",
+    "expected_decision": "ESCALATE"
+  },
+  {
+    "id": "high_risk",
+    "incident": {
+      "description": "Laptop CPU is very busy",
+      "telemetry": {
+        "cpu_percent": 96
+      },
+      "high_risk": true
+    },
+    "expected_category": "cpu_saturation",
+    "expected_decision": "ESCALATE"
+  },
+  {
+    "id": "unsupported",
+    "incident": {
+      "description": "Please troubleshoot a factory robot controller firmware fault"
+    },
+    "expected_category": "unsupported",
+    "expected_decision": "ESCALATE"
+  }
+]

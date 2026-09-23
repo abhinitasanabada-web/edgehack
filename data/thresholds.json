@@ -1,0 +1,8 @@
+{
+  "cpu_percent": 90,
+  "memory_percent": 90,
+  "disk_percent": 90,
+  "temperature_c": 85,
+  "battery_health_percent": 70,
+  "wifi_signal_percent": 35
+}
