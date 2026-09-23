@@ -1,0 +1,5 @@
+{
+  "complaint": "Wi-Fi is connected but websites do not load",
+  "telemetry": {"network": {"dns_ok": false}, "memory_percent": 40}
+}
+
