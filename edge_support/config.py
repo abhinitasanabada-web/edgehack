@@ -22,6 +22,7 @@ class Settings(BaseModel):
     enable_large_local: bool = False
     simulation_mode: bool = False
     sample_count: int = Field(default=3, ge=1, le=5)
+    batch_samples: bool = True
     sample_temperature: float = Field(default=.4, gt=0, le=1)
     agreement_threshold: float = Field(default=.8, ge=0, le=1)
     api_host: str = "127.0.0.1"
@@ -48,7 +49,7 @@ class Settings(BaseModel):
             "cloud_llm_api_key": "CLOUD_LLM_API_KEY", "llm_timeout_seconds": "LLM_TIMEOUT_SECONDS",
             "enable_cloud": "ENABLE_CLOUD", "enable_large_local": "ENABLE_LARGE_LOCAL",
             "simulation_mode": "SIMULATION_MODE", "sample_count": "LOCAL_SAMPLE_COUNT",
-            "sample_temperature": "SAMPLE_TEMPERATURE", "agreement_threshold": "AGREEMENT_THRESHOLD",
+            "sample_temperature": "SAMPLE_TEMPERATURE", "batch_samples": "BATCH_SAMPLES", "agreement_threshold": "AGREEMENT_THRESHOLD",
             "api_host": "EDGE_SUPPORT_API_HOST", "api_port": "EDGE_SUPPORT_API_PORT",
             "action_token": "EDGE_SUPPORT_ACTION_TOKEN",
         }

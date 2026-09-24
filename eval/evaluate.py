@@ -36,11 +36,16 @@ def main():
     parser.add_argument('--output',default='reports/integrated-benchmark.json')
     parser.add_argument('--threshold',type=float,default=.8)
     parser.add_argument('--warmup',action='store_true')
+    parser.add_argument('--large',action='store_true',help='keep the second local tier enabled (measures the full ladder)')
+    parser.add_argument('--limit',type=int,help='only the first N cases (quick pass)')
     args=parser.parse_args()
     settings=Settings.from_env().model_copy(update={'simulation_mode':args.simulate,'sample_count':args.samples,
-        'agreement_threshold':args.threshold,'enable_cloud':False,'enable_large_local':False})
+        'agreement_threshold':args.threshold,'enable_cloud':False,
+        'enable_large_local':args.large and Settings.from_env().enable_large_local})
     if not 0<=args.threshold<=1: parser.error('threshold must be in [0,1]')
-    cases=json.loads(Path(args.dataset).read_text())
+    text=Path(args.dataset).read_text()
+    cases=json.loads(text) if args.dataset.endswith('.json') else [json.loads(l) for l in text.splitlines() if l.strip()]
+    cases=cases[:args.limit]
     if not cases: parser.error('dataset must contain cases')
     def incident(case):
         data=dict(case['incident'])
@@ -56,6 +61,8 @@ def main():
                 'expected_decision':case['expected_decision'],
                 'category_correct':r['diagnosis']['issue_category']==case['expected_category'],
                 'route_correct':r['route']['decision']==case['expected_decision'],
+                'action_correct':r['diagnosis']['recommended_action']==case['expected_action'] if 'expected_action' in case else None,
+                'resolved_by':r['tiers'][-1]['tier'],
                 'assessment':a,'route':r['route'],'metrics':r['metrics']})
         except (ModelError,ValueError) as exc:
             rows.append({'id':case['id'],'ok':False,'error':'Local inference or input failed'})
@@ -66,6 +73,9 @@ def main():
         'threshold':args.threshold,'dataset':Path(args.dataset).name,'cases':len(rows),'success_rate':len(good)/len(rows),
         'category_accuracy':sum(r.get('category_correct',False) for r in rows)/len(rows),
         'route_accuracy':sum(r.get('route_correct',False) for r in rows)/len(rows),
+        'action_accuracy':(sum(bool(r.get('action_correct')) for r in rows)/len(rows)) if any(r.get('action_correct') is not None for r in rows) else None,
+        'local_rate':sum(r.get('route',{}).get('decision')=='LOCAL' for r in good)/len(rows),
+        'resolved_by_large':sum(r.get('resolved_by')=='large' and r['route']['decision']=='LOCAL' for r in good),
         'p50_ms':statistics.median(latency) if latency else None,'p95_ms':quantile(latency,.95),
         'cloud_requests':0,'energy_joules':None,'cloud_cost':None,
         'limitations':'Small-tier deferral curve only; no counterfactual large/cloud cost or energy measured. Failures remain deferred.',

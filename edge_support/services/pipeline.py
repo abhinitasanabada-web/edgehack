@@ -46,9 +46,12 @@ def diagnose(request,settings,client=None):
     assessment=None
     for tier in (["small","large"] if settings.enable_large_local else ["small"]):
         samples=[]
-        for i in range(settings.sample_count):
+        # Batched: one request returns every sample (much faster on vLLM). Sequential otherwise.
+        batched=settings.batch_samples and hasattr(client,"sample_many")
+        calls=[None] if batched else range(settings.sample_count)
+        for i in calls:
             try:
-                d,m=client.sample(payload,tier,i)
+                pairs=client.sample_many(payload,tier,settings.sample_count) if batched else [client.sample(payload,tier,i)]
             except ModelError:
                 if tier=="small": raise
                 # A failed secondary tier cannot trigger cloud automatically or hide the small result.
@@ -56,8 +59,9 @@ def diagnose(request,settings,client=None):
                 route=route_assessment(assessment,settings.agreement_threshold)
                 tiers.append({"tier":tier,"error":"LARGE_MODEL_UNAVAILABLE","assessment":None})
                 break
-            samples.append(d)
-            stats.append(m)
+            for d,m in pairs:
+                samples.append(d)
+                stats.append(m)
         else:
             assessment=assess(samples,settings.sample_count,payload)
             route=route_assessment(assessment,settings.agreement_threshold)

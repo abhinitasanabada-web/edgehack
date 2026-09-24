@@ -166,10 +166,31 @@ For a workload comparison, measure all cloud-only requests versus actual approve
 ## Models, datasets and fine-tuning
 
 - Local deployment observed by the team: Qwen2.5-7B-Instruct via ZRT. Integrated real inference still needs validation.
-- Training/fine-tuning: none. Larger local and cloud models: not yet measured.
+- Training/fine-tuning: pipeline added (see below); no fine-tuned result measured yet. Larger local and cloud models: not yet measured.
 - Original corpus: 9 sample documents; teammate corpus: 12 sample runbooks. Retrieval combines lexical hits from both, not a learned semantic reranker. Their scores use different scales.
 - Evaluation: 13 original synthetic incidents; 3 teammate examples retained in `eval/incidents.jsonl`. No external public dataset has been used.
-- Optional distillation is a proposed follow-up, not an implemented result. Teacher labels need review and an independent test set.
+- Evaluation split: `scripts/make_dataset.py` generates 387 train / 151 test synthetic tickets with template-disjoint wording (train is only for fine-tuning; test only for scoring).
+
+## Fine-tune the small model on the Nano (LoRA)
+
+Goal: teach the 7B model *our* output contract (9 categories, the right action ID per category, exact `signal:`/`kb:` evidence IDs) so its samples agree and pass the evidence gate more often. It does not add IT knowledge. Keep the stock model if the before/after numbers do not improve.
+
+```bash
+# 0. Baseline with the stock model (test split never used for training)
+.venv/bin/python eval/evaluate.py --dataset data/eval/test.jsonl --samples 3 --output reports/base.json
+# 1. Training data from the TRAIN split, same prompt as the app (add TEACHER=large to distil from a served second model)
+STAGE=data bash finetune/run_finetune.sh
+# 2. Free GPU memory (stop the zrt server), then LoRA-train + merge inside nvcr.io/nvidia/pytorch:25.12-py3
+export HF_TOKEN=... HF_REPO_ID=<you>/edgesupport-qwen7b-lora   # optional push
+STAGE=train bash finetune/run_finetune.sh
+# 3. Serve the merged model and point .env at it
+zrt serve ${HF_REPO_ID:-$PWD/finetune/outputs/merged} --host 127.0.0.1 --port 8000
+curl -s 127.0.0.1:8000/v1/models        # set LOCAL_LLM_MODEL to this id
+# 4. Same test, fine-tuned model
+.venv/bin/python eval/evaluate.py --dataset data/eval/test.jsonl --samples 3 --output reports/finetuned.json
+```
+
+Compare `category_accuracy`, `action_accuracy`, `local_rate`, `route_accuracy`, unsafe accepts in the sweep, and p50/p95 latency. `finetune/outputs/train_metrics.json` records training loss, time and peak memory. Samples are now sent in one batched request (`BATCH_SAMPLES=true`, vLLM `n` + JSON schema); set `false` to restore sequential requests. Training library versions in `run_finetune.sh` were only smoke-tested on CPU with a tiny model; the GB10 run is unverified.
 
 ## Docker
 

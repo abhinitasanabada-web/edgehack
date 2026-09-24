@@ -22,6 +22,17 @@ Never recommend disabling security or removing user files. Severity high/critica
 escalate to a human. Confidence is self-reported only, not routing authorization.
 Supported categories: """ + ", ".join(sorted(CATEGORIES))
 
+def messages(payload):
+    """The exact prompt used at inference. Fine-tuning data (finetune/build_sft.py) reuses it."""
+    return [{"role":"system","content":SYSTEM_PROMPT + "\nSchema: " + json.dumps(Diagnosis.model_json_schema())},
+            {"role":"user","content":json.dumps(payload)}]
+
+def parse(content):
+    content = (content or "").strip()
+    if content.startswith("```json") and content.endswith("```"):
+        content = content[7:-3].strip()
+    return Diagnosis.model_validate_json(content)
+
 def validate_endpoint(url, cloud=False):
     parsed = urlparse(url)
     if parsed.scheme not in {"http", "https"} or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment:
@@ -45,9 +56,7 @@ class LocalModelClient:
         if not model:
             raise ModelError(f"No model configured for {tier} tier")
         validate_endpoint(url, cloud=tier=="cloud")
-        body = {"model":model, "messages":[
-            {"role":"system","content":SYSTEM_PROMPT + "\nSchema: " + json.dumps(Diagnosis.model_json_schema())},
-            {"role":"user","content":json.dumps(payload)}],
+        body = {"model":model, "messages":messages(payload),
             "temperature":s.sample_temperature if s.sample_count > 1 else 0,
             "max_tokens":1500}
         start = time.perf_counter()
@@ -66,10 +75,49 @@ class LocalModelClient:
                  **{k:usage.get(k) if type(usage.get(k)) is int and usage[k]>=0 else None
                     for k in ("prompt_tokens","completion_tokens","total_tokens")}}
         try:
-            content = data["choices"][0]["message"]["content"].strip()
-            if content.startswith("```json") and content.endswith("```"):
-                content = content[7:-3].strip()
-            diagnosis = Diagnosis.model_validate_json(content)
+            diagnosis = parse(data["choices"][0]["message"]["content"])
         except (ValueError, KeyError, IndexError, TypeError, AttributeError):
             return None, {**stats,"valid":False}
         return diagnosis, {**stats,"valid":True}
+
+    def sample_many(self, payload, tier="small", n=3):
+        """All n samples in ONE request (vLLM `n`), with the schema enforced during decoding.
+        Returns [(diagnosis or None, stats)], one per requested sample, so agreement math is unchanged."""
+        s = self.settings
+        url, model, key = {
+            "small": (s.local_llm_base_url, s.local_llm_model, s.local_llm_api_key),
+            "large": (s.large_llm_base_url, s.large_llm_model, s.large_llm_api_key),
+        }[tier]
+        if not model:
+            raise ModelError(f"No model configured for {tier} tier")
+        validate_endpoint(url)
+        body = {"model":model, "messages":messages(payload), "n":n, "max_tokens":700,
+                "temperature":s.sample_temperature if n > 1 else 0,
+                "response_format":{"type":"json_schema","json_schema":{"name":"diagnosis","schema":Diagnosis.model_json_schema()}}}
+        target = url.rstrip("/")+"/chat/completions"
+        headers = {"Authorization":f"Bearer {key}"} if key else {}
+        start = time.perf_counter()
+        try:
+            with httpx.Client(timeout=s.llm_timeout_seconds, trust_env=False, follow_redirects=False) as client:
+                response = client.post(target, json=body, headers=headers)
+                if response.status_code in (400, 422):
+                    # Server without structured outputs: retry once without the schema constraint.
+                    body.pop("response_format")
+                    response = client.post(target, json=body, headers=headers)
+                response.raise_for_status()
+                data = response.json()
+        except (httpx.HTTPError, ValueError):
+            raise ModelError(f"{tier} model request failed. No automatic cloud fallback. Check server health and configuration.") from None
+        elapsed = round((time.perf_counter()-start)*1000,2)
+        usage = data.get("usage") if isinstance(data,dict) and isinstance(data.get("usage"),dict) else {}
+        stats = {"tier":tier, "model":model, "latency_ms":elapsed, "batched_samples":n,
+                 **{k:usage.get(k) if type(usage.get(k)) is int and usage[k]>=0 else None
+                    for k in ("prompt_tokens","completion_tokens","total_tokens")}}
+        results = []
+        for choice in (data.get("choices") or [])[:n]:
+            try:
+                results.append((parse(choice["message"]["content"]), {**stats, "valid":True}))
+            except (ValueError, KeyError, TypeError, AttributeError):
+                results.append((None, {**stats, "valid":False}))
+        results += [(None, {**stats, "valid":False})] * (n - len(results))
+        return results

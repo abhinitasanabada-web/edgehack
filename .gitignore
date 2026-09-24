@@ -8,3 +8,5 @@ data/index.json
 reports/
 *.log
 .DS_Store
+finetune/data/
+finetune/outputs/
