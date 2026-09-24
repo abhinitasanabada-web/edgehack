@@ -1,0 +1,5 @@
+{
+  "complaint": "My laptop becomes very slow during video calls",
+  "telemetry": {"memory_percent": 94, "cpu_percent": 72, "network": {"dns_ok": true}, "processes": [{"name": "notepad", "memory_percent": 30.0}]}
+}
+

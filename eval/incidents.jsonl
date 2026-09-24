@@ -1,0 +1,4 @@
+{"input":"The laptop is very slow and memory is almost full","telemetry":{"memory_percent":94,"network":{"dns_ok":true}},"expected_diagnosis":"high_memory","expected_action":"close_demo_process","expected_escalation":false}
+{"input":"Websites do not load but Wi-Fi says connected","telemetry":{"network":{"dns_ok":false}},"expected_diagnosis":"dns_failure","expected_action":"flush_dns","expected_escalation":false}
+{"input":"Something is wrong and I do not know what","telemetry":{},"expected_diagnosis":"ambiguous","expected_action":"no_action_escalate","expected_escalation":true}
+
