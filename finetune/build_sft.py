@@ -10,11 +10,16 @@ Target sources:
   (default)        templated from gold labels: consistent category/action/evidence-ID format
   --teacher large  on-Nano distillation: the served large model answers; kept only when its
                    category and action match the gold label, otherwise the template is used
-Output: finetune/data/sft.jsonl in TRL prompt/completion format (loss on the answer only).
+Output: finetune/data/sft.jsonl in TRL prompt/completion format (loss on the answer only), plus
+finetune/data/sft_meta.json recording the prompt-affecting switches. Build it AFTER choosing the .env
+switches (STRICT_SCHEMA, COMPACT_PROMPT, RETRIEVAL, LOCAL_REDACTION): the model must be trained on the
+exact prompt it will see at inference.
 """
 import argparse
+import hashlib
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from edge_support.config import Settings, ROOT
@@ -69,11 +74,12 @@ def template_target(case, payload):
                          recommended_steps=["Route the request to the appropriate team."], escalate=True,
                          insufficient_evidence=True, rationale="No supported category matches the complaint or telemetry.")
     signal_ids = [s["id"] for s in payload["signals"] if s["category"] == category]
-    known_kb = {k["source"] for k in payload["knowledge"]}
-    kb_ids = ["kb:" + f for f in KB.get(category, []) if f in known_kb][:1]
+    # Match by file name so this works for bare (legacy) and namespaced (bm25: "runbooks/x.md") sources.
+    sources = [k["source"] for k in payload["knowledge"]]
+    kb_ids = ["kb:" + src for f in KB.get(category, []) for src in sources if Path(src).name == f][:1]
     evidence_ids = signal_ids + kb_ids
     evidence = [f"{s['field']}={s['value']}" for s in payload["signals"] if s["category"] == category]
-    evidence += [f"Runbook {k[3:]}" for k in kb_ids]
+    evidence += [f"Runbook {Path(k[3:]).name}" for k in kb_ids]
     if inc.get("logs"):
         evidence.append("Log: " + inc["logs"][:120])
     if risky:
@@ -93,8 +99,8 @@ def main():
     ap.add_argument("--split", default=str(ROOT / "data/eval/train.jsonl"))
     ap.add_argument("--output", default=str(ROOT / "finetune/data/sft.jsonl"))
     args = ap.parse_args()
-    if "test" in Path(args.split).name:
-        sys.exit("Refusing to train on the test split.")
+    if any(tag in Path(args.split).name for tag in ("test", "calib", "hard")):
+        sys.exit("Refusing to train on a scoring split (test/test_hard/calib).")
     settings = Settings.from_env()
     build_index()
     teacher = LocalModelClient(settings) if args.teacher else None
@@ -111,12 +117,20 @@ def main():
                 target = None
             rejected += target is None
         target = target or template_target(case, payload)
-        rows.append({"id": case["id"], "prompt": messages(payload),
+        # Same prompt as inference: the schema is enforced in batched mode, and in sequential mode with STRICT_SCHEMA.
+        rows.append({"id": case["id"], "prompt": messages(payload, settings, settings.batch_samples or settings.strict_schema),
                      "completion": [{"role": "assistant", "content": target.model_dump_json()}]})
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    switches = {k: getattr(settings, k) for k in ("strict_schema", "compact_prompt", "retrieval", "local_redaction", "batch_samples")}
+    system = rows[0]["prompt"][0]["content"] if rows else ""
+    meta = {"examples": len(rows), "split": Path(args.split).name, "teacher": args.teacher, "switches": switches,
+            "system_prompt_sha256": hashlib.sha256(system.encode()).hexdigest(),
+            "created": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+    out.with_name("sft_meta.json").write_text(json.dumps(meta, indent=2))
     print(f"{len(rows)} examples -> {out}" + (f" ({rejected} teacher answers rejected, template used)" if teacher else ""))
+    print(f"prompt switches baked into this data: {switches}  (serve the tuned model with the SAME .env switches)")
 
 if __name__ == "__main__":
     main()

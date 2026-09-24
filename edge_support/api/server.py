@@ -2,9 +2,11 @@
 import copy
 import hmac
 import secrets
+import socket
 import threading
 import time
 from collections import OrderedDict
+from urllib.parse import urlparse
 from fastapi import FastAPI, HTTPException, Request, Depends
 from starlette.responses import JSONResponse
 from app.services.privacy import sanitize
@@ -19,6 +21,30 @@ _records = OrderedDict()
 _lock = threading.Lock()
 _inference = threading.Semaphore(1)
 TTL_SECONDS = 1800
+_uplink_cache = {}          # host -> (checked_at, reachable)
+_uplink_busy = set()
+
+def _probe(host, port):
+    try:
+        with socket.create_connection((host, port), timeout=1.5): ok = True
+    except OSError:
+        ok = False
+    _uplink_cache[host] = (time.monotonic(), ok)
+    _uplink_busy.discard(host)
+
+def uplink(s):
+    """Is the enabled cloud endpoint reachable? TCP only, refreshed in the background every 20 s, so a dead
+    resolver can never stall /health. No request or data is sent."""
+    if s.force_offline:
+        return {"cloud_configured":bool(s.enable_cloud and s.cloud_llm_base_url),"reachable":False,"forced_offline":True}
+    host = urlparse(s.cloud_llm_base_url).hostname if (s.enable_cloud and s.cloud_llm_base_url) else None
+    if not host:
+        return {"cloud_configured":False,"reachable":None,"forced_offline":False}
+    cached = _uplink_cache.get(host)
+    if (not cached or time.monotonic()-cached[0] > 20) and host not in _uplink_busy:
+        _uplink_busy.add(host)
+        threading.Thread(target=_probe, args=(host, urlparse(s.cloud_llm_base_url).port or 443), daemon=True).start()
+    return {"cloud_configured":True,"reachable":cached[1] if cached else None,"forced_offline":False}
 
 @app.middleware("http")
 async def body_limit(request: Request, call_next):
@@ -48,7 +74,9 @@ def prune():
 def health(s: Settings = Depends(authorize)):
     return {"ok":True,"service":"edgesupport","simulation":s.simulation_mode,
             "cloud_enabled":s.enable_cloud,"sample_count":s.sample_count,
-            "large_local_enabled":s.enable_large_local,"auth_enabled":bool(s.action_token)}
+            "large_local_enabled":s.enable_large_local,"auth_enabled":bool(s.action_token),
+            "uplink":uplink(s),"switches":{k:getattr(s,k) for k in ("strict_schema","compact_prompt","gate_mode",
+            "lenient_parse","retrieval","local_redaction")}}
 
 @app.post("/diagnose")
 def diagnose(request: IncidentRequest,s: Settings = Depends(authorize)):
@@ -76,6 +104,8 @@ def latest(s: Settings = Depends(authorize)):
 def escalate(request: EscalationRequest,s: Settings = Depends(authorize)):
     if not s.enable_cloud or s.simulation_mode or not request.consent:
         raise HTTPException(400,"Cloud is disabled, simulation is active, or approval is missing")
+    if s.force_offline:
+        raise HTTPException(503,"Uplink down: nothing was sent. Use the local answer and download the redacted ticket for human support.")
     with _lock:
         prune()
         record=_records.get(request.incident_id)

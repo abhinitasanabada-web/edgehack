@@ -45,4 +45,15 @@ If power telemetry is available, integrate measured power over time in joules (o
 
 The proposed fine-tuning objective is reasonable: improve a small model's task-category and JSON-format behavior using locally generated teacher labels. This is not automatically reliable supervision: teacher agreement is not ground truth. Review a representative sample with IT expertise and keep an independently labeled test set, separate from teacher-generated training data and retrieval documents. Check source/model licenses and privacy before training.
 
-Measure the small model before/after under identical prompts, hardware and routing policy: category/action accuracy, schema validity, coverage at a fixed risk target, escalation rate, latency and tokens. Include training cost and teacher errors. If it does not improve the target metrics, retain the base model. Distillation/training is deliberately not implemented or claimed as complete in this integration.
+Measure the small model before/after under identical prompts, hardware and routing policy: category/action accuracy, schema validity, coverage at a fixed risk target, escalation rate, latency and tokens. Include training cost and teacher errors. If it does not improve the target metrics, retain the base model. The pipeline is implemented in `finetune/` (template targets from the train split, optional on-Nano distillation from a second local model); no fine-tuned result is claimed until `scripts/run_matrix.sh finetuned` has been run.
+
+## v2 enhancements (switchable)
+
+Each is an `.env` switch whose default reproduces the original behaviour, so one Nano session can measure it:
+
+- `STRICT_SCHEMA` enumerates category/action IDs and requires evidence at decode time; the router then sees fewer invalid or unsupported outputs. It narrows, not replaces, the validation schema.
+- `GATE_MODE=majority` stops a single hedging or malformed sample from vetoing an otherwise unanimous result. Risk, specialist and failed-fix gates stay strict in both modes. Both modes' reasons are computed for every ticket, so the sweep compares them from one model run.
+- `RETRIEVAL=bm25` ranks both corpora together with namespaced `kb:` IDs (two file names collided before).
+- `LOCAL_REDACTION=keep_network` lets the on-site model see IP addresses (e.g. a 169.254.x.x DHCP failure) while every returned, stored or ticketed field remains fully redacted.
+- Calibration is now separated from testing: `evaluate.py --calibrate` on `data/eval/calib.jsonl` chooses the threshold and gate mode (highest coverage with zero unsafe accepts and error <= target) and locks it for `test.jsonl` and the stress set `test_hard.jsonl`.
+- The evaluation adds a rules-only baseline, planted-PII leak counts, bytes leaving the site, estimated/measured cloud cost, GPU energy where exposed, per-kind breakdowns and Wilson intervals.

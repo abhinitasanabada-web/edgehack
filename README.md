@@ -2,7 +2,75 @@
 
 Combines the original privacy/telemetry pipeline with the teammate's FastAPI backend, endpoint collectors, action IDs and verification. The Nano performs primary inference; cloud is optional and requires a recorded escalation plus explicit approval. Endpoint changes remain separately confirmed on Windows.
 
-**Current status:** code tested locally in simulation and with mocked model responses. The team previously confirmed Qwen2.5-7B-Instruct was Ready on its Nano, but this integrated version has not yet been validated against that server. No larger local model, cloud benchmark, production dataset or fine-tuning result is claimed.
+**Current status:** code tested locally in simulation and with mocked model responses (v2: 79 tests pass locally; the 4 API tests need FastAPI and run on the Nano). The team previously confirmed Qwen2.5-7B-Instruct was Ready on its Nano, but this integrated version has not yet been validated against that server. No larger local model, cloud benchmark, production dataset or fine-tuning result is claimed.
+
+
+## At a glance
+
+**Target user.** A Tier-1 IT help-desk technician supporting employees at a site with many laptops (a hospital,
+school district or factory). Their telemetry and logs contain e-mails, user paths and internal IPs that stay on
+premises, and their most common ticket ("websites won't load") is exactly when a cloud assistant is unreachable.
+
+**What it does.** Diagnoses the laptop problem on the site's ZGX Nano. It escalates, with a reason code, only
+when the evidence doesn't support answering locally.
+
+**Why the cloud alone can't:**
+- **Data residency.** Raw telemetry never leaves. Planted identifiers leaked into outputs are measured.
+- **No connectivity.** Diagnosis needs only the Nano; `FORCE_OFFLINE=true` demonstrates the uplink cut.
+- **Latency.** Answered on the Nano; p50/p95 are measured.
+- **Cost.** Only deferred tickets can reach the cloud, and only on approval; bytes and tokens sent are measured.
+
+**How it decides.**
+1. Risk, a specialist request or a failed fix goes to a person.
+2. Otherwise the local model answers 3–5 times in one batched request.
+3. The ticket stays local only if the answers agree (≥ τ), cite an existing `signal:`/`kb:` ID, the telemetry
+   agrees, and the fix is known and low-risk.
+4. τ and the gate mode are chosen on `data/eval/calib.jsonl` and locked before `test.jsonl` and `test_hard.jsonl`
+   are scored.
+
+### Results
+
+<!-- RESULTS:START -->
+
+_Pending the Nano run: `bash scripts/run_matrix.sh`, then `scripts/update_readme_results.py reports/base/summary.json`.
+This block is generated from `reports/`; no number here is typed by hand._
+
+<!-- RESULTS:END -->
+
+### Test everything on the Nano in one session
+
+**[docs/NANO_RUNBOOK.md](docs/NANO_RUNBOOK.md)** has the commands in order.
+`scripts/run_matrix.sh` covers every configuration, each calibrated then tested, plus the 1/3/5-sample sweep.
+Then optional fine-tuning, `scripts/compare_runs.py`, and publishing results to this README and the deck.
+
+### v2 switches
+
+Each is set in `.env`. A blank value keeps the original behaviour, so old and new can be compared in one session.
+
+| Switch | Effect |
+|---|---|
+| `STRICT_SCHEMA=true` | Enum category/action IDs + required evidence, enforced at decode time (also sequential + cloud calls) |
+| `COMPACT_PROMPT=true` | Drops the schema text from the prompt when the server already enforces it |
+| `GATE_MODE=majority` | One hedging/malformed sample no longer vetoes; risk gates stay strict |
+| `LENIENT_PARSE=true` | Recovers JSON from `<think>`, code fences, prose and common type slips |
+| `RETRIEVAL=bm25` | One ranked index over both corpora; unique `kb:runbooks/…` / `kb:knowledge/…` IDs |
+| `LOCAL_REDACTION=keep_network` | IPs reach the on-site model (diagnostic); every output stays fully redacted |
+| `MAX_OUTPUT_TOKENS=450` | Output cap per sample (defaults: 700 batched / 1500 sequential) |
+| `FORCE_OFFLINE=true` | Demo: behave as if the uplink were down |
+
+The evaluation adds:
+- a rules-only baseline,
+- planted-PII leak counts and bytes leaving the site,
+- estimated or measured cloud cost (`CLOUD_PRICE_*`, `--cloud-baseline`, `--cloud-escalations`),
+- GPU energy where `nvidia-smi` exposes it,
+- per-kind breakdowns, Wilson intervals, both gate modes' sweeps, and `--workers` for concurrent tickets.
+
+### Submission materials
+
+- Interactive deck: [docs/presentation/index.html](docs/presentation/index.html). It's offline, single-file,
+  and results are embedded by `scripts/build_deck.py`.
+- [Demo run sheet](docs/DEMO_SCRIPT.md), [pitch + Q&A](docs/PITCH.md), [2-min video script](docs/VIDEO_SCRIPT.md)
+- [Project brief](docs/PROJECT_BRIEF.md), [checklist + social posts](docs/SUBMISSION_CHECKLIST.md)
 
 ## What changed
 

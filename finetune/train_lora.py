@@ -67,6 +67,10 @@ def main():
     merged = trainer.model.merge_and_unload()
     merged.save_pretrained(out / "merged", safe_serialization=True)
     tokenizer.save_pretrained(out / "merged")
+    meta = Path(args.data).with_name("sft_meta.json")
+    if meta.exists():  # ship the prompt switches with the weights so evaluation can use the same .env
+        metrics["sft_meta"] = json.loads(meta.read_text())
+        (out / "merged" / "edgesupport_training_meta.json").write_text(meta.read_text())
     (out / "train_metrics.json").write_text(json.dumps(metrics, indent=2, default=str))
     print(json.dumps(metrics, indent=2, default=str))
 

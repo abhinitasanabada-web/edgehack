@@ -1,9 +1,10 @@
 """OpenAI-compatible adapter; no network fallback, redirects, or raw-response logging."""
 import json
+import re
 import time
 from urllib.parse import urlparse
 import httpx
-from edge_support.inference.output_schema import Diagnosis, CATEGORIES
+from edge_support.inference.output_schema import Diagnosis, CATEGORIES, diagnosis_schema
 
 class ModelError(Exception):
     pass
@@ -22,13 +23,47 @@ Never recommend disabling security or removing user files. Severity high/critica
 escalate to a human. Confidence is self-reported only, not routing authorization.
 Supported categories: """ + ", ".join(sorted(CATEGORIES))
 
-def messages(payload):
-    """The exact prompt used at inference. Fine-tuning data (finetune/build_sft.py) reuses it."""
-    return [{"role":"system","content":SYSTEM_PROMPT + "\nSchema: " + json.dumps(Diagnosis.model_json_schema())},
-            {"role":"user","content":json.dumps(payload)}]
+# kb IDs are "kb:" + the knowledge item's `source` exactly as supplied (namespaced when RETRIEVAL=bm25).
+KB_NOTE = "\nFor kb evidence use kb: followed by the knowledge item's source value exactly as given."
 
-def parse(content):
+def messages(payload, settings=None, enforced=False):
+    """The exact prompt used at inference. Fine-tuning data (finetune/build_sft.py) reuses it.
+    With COMPACT_PROMPT and a server-enforced schema, the schema text is omitted (the decoder already has it)."""
+    strict = bool(settings and settings.strict_schema)
+    system = SYSTEM_PROMPT + (KB_NOTE if settings and settings.retrieval == "bm25" else "")
+    if not (settings and settings.compact_prompt and enforced):
+        system += "\nSchema: " + json.dumps(diagnosis_schema(strict))
+    return [{"role":"system","content":system}, {"role":"user","content":json.dumps(payload)}]
+
+CONFIDENCE_WORDS = {"very low":.1, "low":.3, "medium":.6, "moderate":.6, "high":.85, "very high":.95}
+
+def _lenient(content):
+    """Recover the JSON object from common model slips before strict validation."""
+    text = content.rsplit("</think>", 1)[1] if "</think>" in content else content
+    text = text.split("<think>", 1)[0] if "<think>" in text else text
+    text = re.sub(r"^\s*```(?:json)?\s*|\s*```\s*$", "", text.strip(), flags=re.I)
+    start, end = text.find("{"), text.rfind("}")
+    raw = json.loads(text[start:end+1] if start != -1 and end > start else text)
+    if not isinstance(raw, dict):
+        raise ValueError("model output is not a JSON object")
+    raw = {k: v for k, v in raw.items() if k in Diagnosis.model_fields}
+    for key in ("evidence", "evidence_ids", "recommended_steps"):
+        if isinstance(raw.get(key), str): raw[key] = [raw[key]]
+        elif isinstance(raw.get(key), dict): raw[key] = [f"{k}: {v}" for k, v in raw[key].items()]
+    if isinstance(raw.get("confidence"), str):
+        try: raw["confidence"] = float(raw["confidence"].rstrip("%")) / (100 if raw["confidence"].endswith("%") else 1)
+        except ValueError: raw["confidence"] = CONFIDENCE_WORDS.get(raw["confidence"].strip().lower(), .5)
+    if isinstance(raw.get("confidence"), (int, float)) and raw["confidence"] > 1: raw["confidence"] = raw["confidence"] / 100
+    if isinstance(raw.get("severity"), str):
+        raw["severity"] = {"moderate": "medium", "severe": "high"}.get(raw["severity"].lower(), raw["severity"].lower())
+    for key in ("requires_confirmation", "escalate", "insufficient_evidence"):
+        if isinstance(raw.get(key), str): raw[key] = raw[key].strip().lower() == "true"
+    return Diagnosis.model_validate(raw)
+
+def parse(content, lenient=False):
     content = (content or "").strip()
+    if lenient:
+        return _lenient(content)
     if content.startswith("```json") and content.endswith("```"):
         content = content[7:-3].strip()
     return Diagnosis.model_validate_json(content)
@@ -41,6 +76,9 @@ def validate_endpoint(url, cloud=False):
         raise ModelError("Cloud endpoint must use HTTPS")
     if not cloud and parsed.hostname not in {"localhost", "127.0.0.1", "::1", "host.docker.internal"}:
         raise ModelError("Local model endpoint must use loopback; use a private SSH tunnel")
+
+def _response_format(settings):
+    return {"type":"json_schema","json_schema":{"name":"diagnosis","schema":diagnosis_schema(settings.strict_schema)}}
 
 class LocalModelClient:
     def __init__(self, settings):
@@ -56,14 +94,22 @@ class LocalModelClient:
         if not model:
             raise ModelError(f"No model configured for {tier} tier")
         validate_endpoint(url, cloud=tier=="cloud")
-        body = {"model":model, "messages":messages(payload),
+        # STRICT_SCHEMA also enforces the schema here (sequential mode and the cloud second opinion).
+        enforced = s.strict_schema
+        body = {"model":model, "messages":messages(payload, s, enforced),
             "temperature":s.sample_temperature if s.sample_count > 1 else 0,
-            "max_tokens":1500}
+            "max_tokens":s.max_output_tokens or 1500}
+        if enforced: body["response_format"] = _response_format(s)
+        target = url.rstrip("/")+"/chat/completions"
+        headers = {"Authorization":f"Bearer {key}"} if key else {}
         start = time.perf_counter()
         try:
             with httpx.Client(timeout=s.llm_timeout_seconds, trust_env=False, follow_redirects=False) as client:
-                response = client.post(url.rstrip("/")+"/chat/completions",json=body,
-                                       headers={"Authorization":f"Bearer {key}"} if key else {})
+                response = client.post(target,json=body,headers=headers)
+                if enforced and response.status_code in (400, 422):
+                    # Endpoint without structured outputs: retry once unconstrained, with the schema back in the prompt.
+                    body.pop("response_format"); body["messages"] = messages(payload, s, False); enforced = False
+                    response = client.post(target,json=body,headers=headers)
                 response.raise_for_status()
                 data = response.json()
         except (httpx.HTTPError, ValueError):
@@ -71,11 +117,14 @@ class LocalModelClient:
         elapsed = round((time.perf_counter()-start)*1000,2)
         usage = data.get("usage") if isinstance(data,dict) else None
         usage = usage if isinstance(usage,dict) else {}
-        stats = {"tier":tier, "model":model, "latency_ms":elapsed,
+        stats = {"tier":tier, "model":model, "latency_ms":elapsed, "schema_enforced":enforced,
                  **{k:usage.get(k) if type(usage.get(k)) is int and usage[k]>=0 else None
                     for k in ("prompt_tokens","completion_tokens","total_tokens")}}
         try:
-            diagnosis = parse(data["choices"][0]["message"]["content"])
+            choice = data["choices"][0]
+            stats["finish_reason"] = choice.get("finish_reason") if isinstance(choice, dict) else None
+            stats["truncated"] = stats["finish_reason"] == "length"
+            diagnosis = parse(choice["message"]["content"], s.lenient_parse)
         except (ValueError, KeyError, IndexError, TypeError, AttributeError):
             return None, {**stats,"valid":False}
         return diagnosis, {**stats,"valid":True}
@@ -91,18 +140,20 @@ class LocalModelClient:
         if not model:
             raise ModelError(f"No model configured for {tier} tier")
         validate_endpoint(url)
-        body = {"model":model, "messages":messages(payload), "n":n, "max_tokens":700,
-                "temperature":s.sample_temperature if n > 1 else 0,
-                "response_format":{"type":"json_schema","json_schema":{"name":"diagnosis","schema":Diagnosis.model_json_schema()}}}
+        body = {"model":model, "messages":messages(payload, s, True), "n":n, "max_tokens":s.max_output_tokens or 700,
+                "temperature":s.sample_temperature if n > 1 else 0, "response_format":_response_format(s)}
         target = url.rstrip("/")+"/chat/completions"
         headers = {"Authorization":f"Bearer {key}"} if key else {}
         start = time.perf_counter()
+        enforced = True
         try:
             with httpx.Client(timeout=s.llm_timeout_seconds, trust_env=False, follow_redirects=False) as client:
                 response = client.post(target, json=body, headers=headers)
                 if response.status_code in (400, 422):
-                    # Server without structured outputs: retry once without the schema constraint.
-                    body.pop("response_format")
+                    enforced = False
+                    # Server without structured outputs: retry once without the schema constraint
+                    # (and with the schema text back in the prompt if COMPACT_PROMPT had removed it).
+                    body.pop("response_format"); body["messages"] = messages(payload, s, False)
                     response = client.post(target, json=body, headers=headers)
                 response.raise_for_status()
                 data = response.json()
@@ -110,14 +161,17 @@ class LocalModelClient:
             raise ModelError(f"{tier} model request failed. No automatic cloud fallback. Check server health and configuration.") from None
         elapsed = round((time.perf_counter()-start)*1000,2)
         usage = data.get("usage") if isinstance(data,dict) and isinstance(data.get("usage"),dict) else {}
-        stats = {"tier":tier, "model":model, "latency_ms":elapsed, "batched_samples":n,
+        # NB: usage covers ALL n choices; it is copied onto each sample, so divide by batched_samples when summing.
+        stats = {"tier":tier, "model":model, "latency_ms":elapsed, "batched_samples":n, "schema_enforced":enforced,
                  **{k:usage.get(k) if type(usage.get(k)) is int and usage[k]>=0 else None
                     for k in ("prompt_tokens","completion_tokens","total_tokens")}}
         results = []
         for choice in (data.get("choices") or [])[:n]:
+            finish = choice.get("finish_reason") if isinstance(choice, dict) else None
+            meta = {**stats, "finish_reason":finish, "truncated":finish == "length"}
             try:
-                results.append((parse(choice["message"]["content"]), {**stats, "valid":True}))
+                results.append((parse(choice["message"]["content"], s.lenient_parse), {**meta, "valid":True}))
             except (ValueError, KeyError, TypeError, AttributeError):
-                results.append((None, {**stats, "valid":False}))
-        results += [(None, {**stats, "valid":False})] * (n - len(results))
+                results.append((None, {**meta, "valid":False}))
+        results += [(None, {**stats, "valid":False, "missing":True})] * (n - len(results))
         return results

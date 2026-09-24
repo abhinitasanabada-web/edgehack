@@ -2,9 +2,12 @@ import json
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.models import Telemetry
+from edge_support.actions.registry import ACTION_REGISTRY
 
 CATEGORIES = {"cpu_saturation", "memory_pressure", "thermal_throttling", "disk_pressure",
               "wifi_connectivity", "battery_degradation", "application_crash", "startup", "dns_network"}
+CategoryId = Literal[tuple(sorted(CATEGORIES)) + ("unsupported",)]
+ActionId = Literal[tuple(ACTION_REGISTRY)]
 
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
@@ -22,6 +25,25 @@ class Diagnosis(StrictModel):
     escalate: bool = False
     insufficient_evidence: bool = False
     rationale: str = Field(default="", max_length=1000)
+
+class StrictDiagnosis(StrictModel):
+    """Generation-time contract (STRICT_SCHEMA): the decoder can only emit known category/action IDs,
+    and must commit to evidence. Parsed results are still validated as Diagnosis, which it narrows."""
+    issue_category: CategoryId
+    diagnosis: str = Field(min_length=1, max_length=1000)
+    evidence: list[str] = Field(max_length=10)
+    evidence_ids: list[str] = Field(max_length=20)
+    confidence: float = Field(ge=0, le=1)
+    severity: Literal["low", "medium", "high", "critical"]
+    recommended_action: ActionId
+    recommended_steps: list[str] = Field(default_factory=list, max_length=10)
+    requires_confirmation: bool = True
+    escalate: bool = False
+    insufficient_evidence: bool = False
+    rationale: str = Field(default="", max_length=1000)
+
+def diagnosis_schema(strict=False):
+    return (StrictDiagnosis if strict else Diagnosis).model_json_schema()
 
 class IncidentRequest(StrictModel):
     complaint: str = Field(min_length=5, max_length=6000)

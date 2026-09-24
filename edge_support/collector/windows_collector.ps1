@@ -17,10 +17,25 @@ function Get-EndpointTelemetry {
     $cpu = Get-CimInstance Win32_Processor | Measure-Object LoadPercentage -Average
     $processes = Get-Process | Select-Object @{Name="name";Expression={$_.ProcessName}}, @{Name="memory_mb";Expression={[math]::Round($_.WorkingSet64 / 1MB,1)}}
     $drive = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='C:'"
+    # Battery health = full-charge / design capacity (laptops only; $null on desktops or without WMI access).
+    $battery = $null
+    try {
+        $full = (Get-CimInstance -Namespace root\wmi -ClassName BatteryFullChargedCapacity -ErrorAction Stop | Select-Object -First 1).FullChargedCapacity
+        $design = (Get-CimInstance -Namespace root\wmi -ClassName BatteryStaticData -ErrorAction Stop | Select-Object -First 1).DesignedCapacity
+        if ($full -and $design) { $battery = [math]::Min(100, [math]::Round(100 * $full / $design, 1)) }
+    } catch { $battery = $null }
+    # Wi-Fi signal quality from netsh (English-language output); $null when wired or unavailable.
+    $wifi = $null
+    try {
+        $match = (netsh wlan show interfaces) | Select-String '^\s*Signal\s*:\s*(\d+)%' | Select-Object -First 1
+        if ($match) { $wifi = [int]$match.Matches[0].Groups[1].Value }
+    } catch { $wifi = $null }
     return @{
         cpu_percent = $cpu.Average
         memory_percent = [math]::Round(100 * (1 - $os.FreePhysicalMemory / $os.TotalVisibleMemorySize),2)
         disk_percent = [math]::Round((1 - $drive.FreeSpace / $drive.Size)*100,2)
+        battery_health_percent = $battery
+        wifi_signal_percent = $wifi
         processes = @($processes | Sort-Object memory_mb -Descending | Select-Object -First 100)
         network = @{dns_ok=$dnsOk}
         collected_at = (Get-Date).ToUniversalTime().ToString("o")

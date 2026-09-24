@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EdgeSupport — HP Edge AI SJSUHack</title>
+<style>
+:root { color-scheme: light; --page:#f9f9f7; --surface:#fcfcfb; --surface-2:#f3f2ee; --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10); --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --warning:#fab219; --critical:#d03b3b; --good:#0ca30c; }
+@media (prefers-color-scheme: dark) { :root:where(:not([data-theme="light"])) { color-scheme: dark; --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232321; --ink:#fff; --ink-2:#c3c2b7;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10); --s1:#3987e5; --s2:#d95926; --s3:#199e70; } }
+:root[data-theme="dark"] { color-scheme: dark; --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232321; --ink:#fff; --ink-2:#c3c2b7;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10); --s1:#3987e5; --s2:#d95926; --s3:#199e70; }
+* { box-sizing:border-box; }
+html, body { margin:0; height:100%; background:var(--page); color:var(--ink); font:18px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; }
+:focus-visible { outline:2px solid var(--s1); outline-offset:2px; }
+.deck { height:100%; display:flex; flex-direction:column; }
+.bar { height:4px; background:var(--grid); } .bar i { display:block; height:100%; background:var(--s1); transition:width .25s; }
+.slides { flex:1; position:relative; overflow:hidden; }
+section.slide { position:absolute; inset:0; padding:5vh 7vw; overflow:auto; display:none; }
+section.slide.on { display:block; animation:fade .25s; }
+@keyframes fade { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+@media (prefers-reduced-motion: reduce) { section.slide.on { animation:none; } }
+.kicker { font-size:13px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--s1); }
+h1 { font-size:clamp(34px,5vw,64px); line-height:1.05; margin:.3em 0; letter-spacing:-.02em; }
+h2 { font-size:clamp(26px,3.2vw,40px); margin:.2em 0 .6em; letter-spacing:-.01em; }
+p.lead { font-size:clamp(18px,1.6vw,24px); color:var(--ink-2); max-width:64ch; }
+.muted { color:var(--muted); } .ink2 { color:var(--ink-2); }
+.grid { display:grid; gap:18px; } .g2 { grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); } .g4 { grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px 20px; }
+button.card { text-align:left; cursor:pointer; font:inherit; color:inherit; width:100%; }
+button.card[aria-expanded="true"] { box-shadow:inset 4px 0 0 var(--s1); }
+.card h3 { margin:0 0 6px; font-size:20px; } .card .more { color:var(--ink-2); font-size:16px; margin-top:8px; }
+.tile .label { font-size:14px; color:var(--ink-2); } .tile .value { font-size:40px; font-weight:650; letter-spacing:-.02em; } .tile .sub { font-size:13px; color:var(--muted); }
+.nav { display:flex; align-items:center; gap:10px; padding:10px 18px; border-top:1px solid var(--border); background:var(--surface); font-size:14px; }
+.nav button, .controls button, .seg button { border:1px solid var(--border); background:var(--surface-2); border-radius:8px; padding:6px 12px; cursor:pointer; color:inherit; font:inherit; }
+.controls button.primary { background:var(--s1); color:#fff; border-color:var(--s1); font-weight:600; }
+.seg button[aria-pressed="true"] { border-color:var(--s1); box-shadow:inset 0 -2px 0 var(--s1); }
+.nav .count { margin-left:auto; color:var(--muted); font-variant-numeric:tabular-nums; }
+table { border-collapse:collapse; width:100%; font-size:16px; } th, td { text-align:left; padding:7px 10px; border-bottom:1px solid var(--grid); vertical-align:top; } th { color:var(--ink-2); font-weight:600; }
+.pill { display:inline-block; padding:2px 10px; border-radius:6px; border:1px solid var(--border); background:var(--surface-2); font-size:14px; font-weight:600; }
+svg { width:100%; height:auto; display:block; overflow:visible; }
+svg text { fill:var(--ink-2); font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
+.node rect { fill:var(--surface); stroke:var(--axis); stroke-width:1.5; transition:stroke .2s; }
+.node.lit rect { stroke:var(--s1); stroke-width:3; } .node.cloud.lit rect { stroke:var(--s2); } .node.warn.lit rect { stroke:var(--warning); } .node.human.lit rect { stroke:var(--critical); }
+.node text.t { fill:var(--ink); font-weight:600; font-size:15px; } .node text.d { font-size:12px; fill:var(--muted); }
+.edge { stroke:var(--axis); stroke-width:2; fill:none; transition:stroke .2s; } .edge.lit { stroke:var(--s1); stroke-width:3; }
+.edge.cloud.lit { stroke:var(--s2); } .edge.warn.lit { stroke:var(--warning); } .edge.human.lit { stroke:var(--critical); }
+.zone { fill:var(--s1); opacity:.05; } .zone-label { font-size:13px; font-weight:700; letter-spacing:.08em; fill:var(--s1); }
+.controls, .seg { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:12px 0; }
+label.sl { display:block; font-size:15px; color:var(--ink-2); margin:10px 0; } label.sl b { color:var(--ink); }
+input[type=range] { width:100%; accent-color:var(--s1); }
+.caption { font-size:15px; color:var(--ink-2); min-height:1.5em; }
+.out { font-size:28px; font-weight:650; } .assume { font-size:13px; color:var(--muted); }
+.legend { display:flex; gap:14px; font-size:13px; color:var(--ink-2); margin-bottom:4px; } .legend i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; }
+.banner { background:var(--surface-2); border-left:3px solid var(--warning); padding:8px 12px; border-radius:6px; font-size:14px; margin-bottom:12px; }
+</style>
+</head>
+<body>
+<!-- scripts/build_deck.py replaces the JSON below with reports/<tag>/summary.json rows. -->
+<script id="edge-data" type="application/json">null</script>
+<div class="deck">
+  <div class="bar" aria-hidden="true"><i id="progress"></i></div>
+  <div class="slides">
+
+    <section class="slide" aria-label="Title">
+      <div class="kicker">HP Edge AI SJSUHack · ZGX Nano GB10</div>
+      <h1>EdgeSupport</h1>
+      <p class="lead">Diagnose on site. Escalate with evidence. An IT triage agent whose primary inference runs on the Nano, and which can explain, measurably, every time a ticket leaves it.</p>
+      <p class="muted">← → or space to navigate · <span id="data-state"></span></p>
+    </section>
+
+    <section class="slide" aria-label="The user">
+      <div class="kicker">Who it is for</div>
+      <h2>A Tier-1 help-desk technician at a site full of employee laptops</h2>
+      <div class="grid g2">
+        <div class="card"><h3>The job</h3><p class="ink2">Most tickets are the same dozen problems: CPU or memory pressure, a full disk, heat, battery wear, Wi-Fi, DNS, a crashing app, slow boots. Each needs someone to read device telemetry and match it to a runbook.</p></div>
+        <div class="card"><h3>The catch</h3><p class="ink2">That telemetry and those logs carry e-mails, user paths, internal IPs and sometimes secrets. And the most common ticket, <i>"websites won't load"</i>, is exactly when a cloud assistant can't be reached.</p></div>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="Why the cloud alone is not enough">
+      <div class="kicker">Why not cloud-only?</div>
+      <h2>Four constraints, four measured answers</h2>
+      <p class="muted">Click a card.</p>
+      <div class="grid g4" id="constraints"></div>
+    </section>
+
+    <section class="slide" aria-label="Architecture">
+      <div class="kicker">AI system architecture</div>
+      <h2>One ticket, end to end</h2>
+      <div class="controls">
+        <button class="primary" data-play="local">▶ Routine ticket</button>
+        <button data-play="tier">▶ Uncertain ticket</button>
+        <button data-play="human">▶ Risky ticket</button>
+        <button data-play="cloud">▶ Approved cloud second opinion</button>
+      </div>
+      <div id="arch"></div>
+      <p class="caption" id="arch-caption" aria-live="polite">Everything inside the blue zone runs on the Nano at the site.</p>
+    </section>
+
+    <section class="slide" aria-label="The routing decision">
+      <div class="kicker">The decision the brief asks for</div>
+      <h2>Keep it local only when the evidence says so</h2>
+      <div class="grid g2">
+        <div class="card">
+          <table>
+            <thead><tr><th>Check</th><th>If it fails</th></tr></thead>
+            <tbody>
+              <tr><td>Risk phrase, high severity, specialist request, failed fix</td><td><span class="pill">Human</span> always</td></tr>
+              <tr><td>Category/action known, fix matches the problem, not high-risk</td><td><span class="pill">Escalate</span></td></tr>
+              <tr><td>Cited evidence exists (signal:… / kb:…) and telemetry agrees</td><td><span class="pill">Escalate</span></td></tr>
+              <tr><td>Model asked 3–5 times; agreement ≥ τ</td><td><span class="pill">Escalate</span></td></tr>
+              <tr><td>All pass</td><td><span class="pill">Answer on site</span></td></tr>
+            </tbody>
+          </table>
+          <p class="muted" style="font-size:14px">τ and the gate mode are chosen on a separate calibration split (lowest error, zero unsafe accepts) and locked before the test split is scored.</p>
+        </div>
+        <div class="card">
+          <div class="seg" role="group" aria-label="Gate mode"><span class="ink2" style="font-size:14px">Gate mode:</span>
+            <button data-mode="any" aria-pressed="true">any sample vetoes</button><button data-mode="majority" aria-pressed="false">majority decides</button></div>
+          <div id="tau-chart"></div>
+          <label class="sl" for="tau">Agreement threshold τ</label>
+          <input type="range" id="tau" min="0" max="1" value="0">
+          <p class="caption" id="tau-out"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="Evidence">
+      <div class="kicker">Benchmarks / evidence</div>
+      <h2 id="ev-title">Held-out test split</h2>
+      <div id="ev-banner"></div>
+      <div class="grid g4" id="ev-tiles"></div>
+      <div class="grid g2" style="margin-top:18px">
+        <div class="card"><h3>Model vs rules-only baseline, by ticket type</h3><p class="muted" style="font-size:14px;margin-top:0">Rules = telemetry thresholds + keywords, no model.</p><div id="ev-kind"></div></div>
+        <div class="card"><h3>What each change bought</h3><p class="muted" style="font-size:14px;margin-top:0">Share of test tickets answered on site, same model, each config calibrated separately.</p><div id="ev-ab"></div>
+          <h3 style="margin-top:14px">Bytes leaving the site per ticket</h3><div id="ev-egress"></div></div>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="Impact">
+      <div class="kicker">Impact</div>
+      <h2>What one Nano does for a site</h2>
+      <div class="grid g2">
+        <div class="card">
+          <label class="sl">Employees at the site: <b id="v-emp"></b><input type="range" id="emp" min="500" max="20000" step="500" value="3000"></label>
+          <label class="sl">Device tickets per employee per year: <b id="v-tix"></b><input type="range" id="tix" min="1" max="12" step="0.5" value="4"></label>
+          <label class="sl">Technician minutes saved per ticket answered on site: <b id="v-min"></b><input type="range" id="min" min="0" max="30" step="1" value="10"></label>
+          <p class="assume" id="assume"></p>
+        </div>
+        <div class="grid" style="grid-template-columns:1fr 1fr" id="impact-out"></div>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="What we learned">
+      <div class="kicker">Testing the limits of the GB10</div>
+      <h2>What we learned</h2>
+      <div class="grid g2" id="learned"></div>
+    </section>
+
+    <section class="slide" aria-label="Try it">
+      <div class="kicker">Edge first, cloud when it counts</div>
+      <h1>Try it</h1>
+      <p class="lead">Every answer shows the telemetry signals, the runbooks cited, how many times the model agreed, which gates passed, and exactly what would leave the building.</p>
+      <p class="ink2">Repo: code, Dockerfile, setup script, synthetic benchmark with calibration/test/hard splits, fine-tuning pipeline. <code>bash scripts/setup.sh &amp;&amp; bash run_demo.sh</code></p>
+    </section>
+  </div>
+  <nav class="nav" aria-label="Slide navigation">
+    <button id="prev" aria-label="Previous slide">←</button><button id="next" aria-label="Next slide">→</button>
+    <button id="theme" aria-label="Toggle theme">◐</button>
+    <span class="count" id="count"></span>
+  </nav>
+</div>
+<script>
+"use strict";
+const $ = (s) => document.querySelector(s);
+const SVG = "http://www.w3.org/2000/svg";
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function h(t, a, ...k) { const e = document.createElement(t); for (const [x, v] of Object.entries(a || {})) { if (v == null || v === false) continue; if (x.startsWith("on")) e.addEventListener(x.slice(2), v); else e.setAttribute(x, v); } for (const c of k.flat()) if (c != null) e.append(c instanceof Node ? c : document.createTextNode(String(c))); return e; }
+function s(t, a, ...k) { const e = document.createElementNS(SVG, t); for (const [x, v] of Object.entries(a || {})) if (v != null) e.setAttribute(x, v); for (const c of k.flat()) if (c != null) e.append(c instanceof Node ? c : document.createTextNode(String(c))); return e; }
+const pct = (x, d = 0) => x == null ? "—" : `${(100 * x).toFixed(d)}%`;
+const bytes = (x) => x == null ? "—" : x >= 1e9 ? `${(x / 1e9).toFixed(1)} GB` : x >= 1e6 ? `${(x / 1e6).toFixed(1)} MB` : x >= 1e3 ? `${(x / 1e3).toFixed(1)} KB` : `${Math.round(x)} B`;
+const secs = (ms) => ms == null ? "—" : ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(1)} s`;
+
+/* ------------------------------------------------ data */
+let ROWS = null;
+try { ROWS = JSON.parse(document.getElementById("edge-data").textContent); } catch (e) { ROWS = null; }
+const pick = (dataset, cfg, n = 3) => (ROWS || []).find((r) => r.dataset === dataset && String(r.run).endsWith(`-${cfg}-n${n}`));
+const PRIMARY = ROWS && (pick("test.jsonl", "full") || ROWS.find((r) => r.dataset === "test.jsonl") || ROWS[0]);
+const HARD = ROWS && (pick("test_hard.jsonl", "full") || ROWS.find((r) => r.dataset === "test_hard.jsonl"));
+const SIM = PRIMARY && PRIMARY.mode !== "LOCAL_MODEL";
+// Headline latency comes from the one-ticket-at-a-time probe when present (matrix rows run tickets concurrently).
+const PROBE = ROWS && ROWS.find((r) => r.dataset === "latency_probe");
+const LAT = PROBE ? { p50: PROBE.p50_ms, p95: PROBE.p95_ms, note: "one ticket at a time" }
+                  : PRIMARY ? { p50: PRIMARY.p50_ms, p95: PRIMARY.p95_ms, note: `${PRIMARY.workers || 1} tickets in flight` } : null;
+$("#data-state").textContent = !PRIMARY ? "no results embedded yet (run scripts/build_deck.py after the Nano run)"
+  : SIM ? "SIMULATION data embedded — plumbing only, not model results" : `results from ${PRIMARY.model} · ${PRIMARY.timestamp || ""}`;
+
+/* ------------------------------------------------ navigation */
+const slides = [...document.querySelectorAll("section.slide")];
+let cur = Math.max(0, Math.min(slides.length - 1, Number(location.hash.slice(1)) || 0));
+function go(i) { cur = Math.max(0, Math.min(slides.length - 1, i)); slides.forEach((sl, j) => sl.classList.toggle("on", j === cur));
+  $("#progress").style.width = `${(100 * (cur + 1)) / slides.length}%`; $("#count").textContent = `${cur + 1} / ${slides.length}`; history.replaceState(null, "", `#${cur}`); }
+document.addEventListener("keydown", (e) => { if (e.target.matches("input")) return;
+  if (["ArrowRight", "PageDown", " "].includes(e.key)) { e.preventDefault(); go(cur + 1); }
+  if (["ArrowLeft", "PageUp"].includes(e.key)) { e.preventDefault(); go(cur - 1); } });
+$("#prev").onclick = () => go(cur - 1); $("#next").onclick = () => go(cur + 1);
+$("#theme").onclick = () => { const d = document.documentElement; const c = d.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"); d.dataset.theme = c === "dark" ? "light" : "dark"; renderAll(); };
+
+/* ------------------------------------------------ constraints */
+function renderConstraints() {
+  const p = PRIMARY;
+  const C = [
+    ["Data residency", "Telemetry carries identities.", p ? `Raw telemetry never leaves. Planted PII leaked in outputs: ${p.pii_leaked}/${p.pii_planted}. Redacted tickets only, and only on approval.` : "Raw telemetry never leaves; we count planted PII that survives into any output."],
+    ["No connectivity", "The #1 ticket is \"sites won't load\".", "Diagnosis needs only the Nano and the private link. With the uplink cut, answers keep coming and escalations stay as local tickets."],
+    ["Latency", "A stuck employee can't wait.", LAT ? `Median ${secs(LAT.p50)} per ticket on the Nano (${LAT.note}), all samples in one batched request.` : "We report p50/p95 per ticket; all samples go in one batched request."],
+    ["Per-token cost", "Every ticket at cloud prices adds up.", p ? `Only ${pct(1 - p.local_rate)} of test tickets defer at all; cloud needs explicit approval, and sends ${bytes(p.egress_hybrid_b)} per ticket vs ${bytes(p.egress_cloud_only_b)} cloud-only.` : "Only deferred tickets can reach the cloud, with explicit approval."]];
+  $("#constraints").replaceChildren(...C.map(([t, a, b]) => { const more = h("div", { class: "more", hidden: "" }, b);
+    const btn = h("button", { class: "card", "aria-expanded": "false", onclick: () => { const o = more.hidden; more.hidden = !o; btn.setAttribute("aria-expanded", String(o)); } }, h("h3", {}, t), h("div", { class: "ink2" }, a), more); return btn; }));
+}
+
+/* ------------------------------------------------ architecture */
+const NODES = {
+  laptop: [20, 60, "Laptop collector", "CPU · memory · disk · DNS"], redact: [220, 60, "Redaction", "secrets, e-mails, paths"],
+  rules: [420, 60, "Rules + retrieval", "threshold signals · BM25 kb"], small: [620, 60, "Local model ×3–5", "Qwen on ZRT/vLLM"],
+  gates: [620, 190, "Evidence + agreement", "+ safety gates"], answer: [420, 190, "Answer on site", "steps · allowed fix"],
+  large: [820, 190, "2nd local model", "optional, same Nano"], human: [420, 320, "Human IT support", "redacted ticket"],
+  cloud: [860, 320, "Cloud 2nd opinion", "explicit approval only"],
+};
+const EDGES = [["laptop", "redact"], ["redact", "rules"], ["rules", "small"], ["small", "gates"], ["gates", "answer"], ["gates", "large"], ["large", "answer"], ["gates", "human"], ["gates", "cloud"]];
+const W = 180, HH = 64;
+function renderArch() {
+  const g = s("svg", { viewBox: "0 0 1060 410", role: "img", "aria-label": "EdgeSupport architecture" });
+  g.append(s("rect", { class: "zone", x: 8, y: 20, width: 1010, height: 280, rx: 16 }), s("text", { class: "zone-label", x: 24, y: 44 }, "SITE · HP ZGX NANO (and the laptop it serves)"));
+  const c = (k) => { const [x, y] = NODES[k]; return [x + W / 2, y + HH / 2]; };
+  for (const [a, b] of EDGES) { const [x1, y1] = c(a), [x2, y2] = c(b);
+    const cls = b === "cloud" ? "edge cloud" : b === "human" ? "edge human" : "edge";
+    g.append(s("path", { class: cls, id: `e-${a}-${b}`, d: a === "large" && b === "answer" ? `M${x1},${y1 + HH / 2} C${x1},${y1 + 90} ${x2},${y2 + 90} ${x2},${y2 + HH / 2}` : `M${x1},${y1} L${x2},${y2}` })); }
+  for (const [k, [x, y, t, d]] of Object.entries(NODES)) { const cls = k === "cloud" ? "node cloud" : k === "human" ? "node human" : k === "large" ? "node warn" : "node";
+    g.append(s("g", { class: cls, id: `n-${k}` }, s("rect", { x, y, width: W, height: HH, rx: 10 }), s("text", { class: "t", x: x + 12, y: y + 26 }, t), s("text", { class: "d", x: x + 12, y: y + 46 }, d))); }
+  $("#arch").replaceChildren(g);
+}
+let timer = null;
+function play(kind) {
+  clearTimeout(timer); document.querySelectorAll(".lit").forEach((e) => e.classList.remove("lit"));
+  const base = [["n-laptop", "An employee reports a problem; the collector sends CPU, memory, disk, battery, Wi-Fi and DNS readings."],
+    ["e-laptop-redact n-redact", "Secrets, e-mails and user paths are stripped. Raw data stays on the site."],
+    ["e-redact-rules n-rules", "Threshold rules turn readings into signal IDs; BM25 retrieves the matching runbooks."],
+    ["e-rules-small n-small", "The local model answers 3–5 times in one batched request, with the output schema enforced."],
+    ["e-small-gates n-gates", kind === "human" ? "A risk phrase (\"burning smell\") trips a hard gate." : kind === "local" ? "Answers agree, cite a real signal and runbook, and telemetry agrees." : "Answers disagree, or the evidence is thin."]];
+  const tail = { local: [["e-gates-answer n-answer", "Answered on site, with steps and an approved, confirm-first fix."]],
+    tier: [["e-gates-large n-large", "An optional second local model on the same Nano tries first."], ["e-large-answer n-answer", "If it passes the same gates, still answered on site. No cloud call."]],
+    human: [["e-gates-human n-human", "Straight to IT support with a redacted ticket. The cloud cannot override a safety gate."]],
+    cloud: [["e-gates-cloud n-cloud", "Only after a person reviews the redacted ticket and approves, it goes to the cloud as a second opinion. It never authorizes a fix."]] }[kind];
+  const seq = [...base, ...tail]; let i = 0;
+  const tick = () => { if (i >= seq.length) return; for (const id of seq[i][0].split(" ")) document.getElementById(id)?.classList.add("lit");
+    $("#arch-caption").textContent = seq[i][1]; i += 1; timer = setTimeout(tick, matchMedia("(prefers-reduced-motion: reduce)").matches ? 50 : 1300); };
+  tick();
+}
+document.querySelectorAll("[data-play]").forEach((b) => b.addEventListener("click", () => play(b.dataset.play)));
+
+/* ------------------------------------------------ charts (thin marks, 4px data ends, hairline grid, text in ink tokens) */
+const barPath = (x, y, w, hh, r = 4) => { r = Math.min(r, hh / 2, w); return `M${x},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + hh - r}Q${x + w},${y + hh} ${x + w - r},${y + hh}H${x}Z`; };
+const colPath = (x, y, w, hh, r = 4) => { r = Math.min(r, w / 2, hh); return `M${x},${y + hh}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + hh}Z`; };
+function hbars(el, rows, f) {
+  const Wd = 520, rh = 34, l = 170, r = 70, H = rows.length * rh + 8, mx = Math.max(...rows.map((x) => x.v || 0), 1e-9);
+  const g = s("svg", { viewBox: `0 0 ${Wd} ${H}`, role: "img" }); g.append(s("line", { x1: l, x2: l, y1: 0, y2: H, stroke: css("--axis") }));
+  rows.forEach((x, i) => { const y = i * rh + 7, w = ((x.v || 0) / mx) * (Wd - l - r);
+    g.append(s("text", { x: l - 10, y: y + 14, "text-anchor": "end", "font-size": 13 }, x.label));
+    if (x.v == null) { g.append(s("text", { x: l + 8, y: y + 14, "font-size": 13, fill: css("--muted") }, "not measured")); return; }
+    g.append(s("path", { d: barPath(l, y, Math.max(w, 1), 20), fill: x.color }, s("title", {}, `${x.label}: ${f(x.v)}`)), s("text", { x: l + w + 8, y: y + 14, "font-size": 13, "font-weight": 600 }, f(x.v))); });
+  el.replaceChildren(g);
+}
+function columns(el, cats, series) {
+  const Wd = 520, H = 230, m = { l: 40, r: 8, t: 20, b: 44 }, iw = Wd - m.l - m.r, ih = H - m.t - m.b;
+  const g = s("svg", { viewBox: `0 0 ${Wd} ${H}`, role: "img" });
+  for (let i = 0; i <= 4; i++) { const y = m.t + ih - (i / 4) * ih; g.append(s("line", { x1: m.l, x2: Wd - m.r, y1: y, y2: y, stroke: i ? css("--grid") : css("--axis") }), s("text", { x: m.l - 6, y: y + 4, "text-anchor": "end", "font-size": 12, fill: css("--muted") }, pct(i / 4))); }
+  const band = iw / cats.length, bw = Math.min(24, (band * 0.7 - 2 * (series.length - 1)) / series.length), gw = series.length * bw + (series.length - 1) * 2;
+  cats.forEach((c, ci) => { const gx = m.l + ci * band + (band - gw) / 2;
+    series.forEach((sr, si) => { const v = sr.values[ci]; if (v == null) return; const hh = v * ih, x = gx + si * (bw + 2), y = m.t + ih - hh;
+      g.append(s("path", { d: colPath(x, y, bw, Math.max(hh, .5)), fill: sr.color }, s("title", {}, `${sr.name} · ${c}: ${pct(v)}`))); });
+    g.append(s("text", { x: m.l + ci * band + band / 2, y: H - 24, "text-anchor": "middle", "font-size": 12 }, c.replace(/_/g, " "))); });
+  const legend = h("div", { class: "legend" }, ...series.map((x) => h("span", {}, h("i", { style: `background:${x.color}` }), x.name)));
+  el.replaceChildren(legend, g);
+}
+
+/* ------------------------------------------------ tau explorer */
+let MODE = "any";
+function renderTau() {
+  const sweeps = PRIMARY && PRIMARY.sweep;
+  if (!sweeps || !sweeps[MODE]) { $("#tau-chart").replaceChildren(h("p", { class: "muted" }, "Embed a Nano run (scripts/build_deck.py) to explore the live trade-off.")); $("#tau").disabled = true; return; }
+  const curve = [...sweeps[MODE]].sort((a, b) => a.threshold - b.threshold);
+  const Wd = 520, H = 240, m = { l: 46, r: 10, t: 12, b: 36 }, iw = Wd - m.l - m.r, ih = H - m.t - m.b;
+  const X = (c) => m.l + c * iw, maxE = Math.max(.1, ...curve.map((p) => p.selective_error || 0)), Y = (e) => m.t + ih - (e / maxE) * ih;
+  const g = s("svg", { viewBox: `0 0 ${Wd} ${H}`, role: "img", "aria-label": "coverage versus error among kept tickets" });
+  for (let i = 0; i <= 4; i++) { const e = maxE * i / 4; g.append(s("line", { x1: m.l, x2: Wd - m.r, y1: Y(e), y2: Y(e), stroke: i ? css("--grid") : css("--axis") }), s("text", { x: m.l - 6, y: Y(e) + 4, "text-anchor": "end", "font-size": 12, fill: css("--muted") }, pct(e))); }
+  for (let i = 0; i <= 4; i++) g.append(s("text", { x: X(i / 4), y: H - 18, "text-anchor": "middle", "font-size": 12, fill: css("--muted") }, pct(i / 4)));
+  g.append(s("text", { x: m.l + iw / 2, y: H - 2, "text-anchor": "middle", "font-size": 12, fill: css("--muted") }, "share of tickets answered on site →  (lower line = fewer wrong answers kept)"));
+  const pts = curve.filter((p) => p.coverage > 0).sort((a, b) => a.coverage - b.coverage);
+  if (pts.length) g.append(s("path", { d: pts.map((p, i) => `${i ? "L" : "M"}${X(p.coverage)},${Y(p.selective_error || 0)}`).join(""), fill: "none", stroke: css(MODE === "any" ? "--s1" : "--s2"), "stroke-width": 2, "stroke-linejoin": "round" }));
+  const dot = s("circle", { r: 6, fill: css(MODE === "any" ? "--s1" : "--s2"), stroke: css("--surface"), "stroke-width": 2 }); g.append(dot);
+  $("#tau-chart").replaceChildren(g);
+  const slider = $("#tau"); slider.disabled = false; slider.min = 0; slider.max = curve.length - 1; slider.step = 1;
+  const locked = curve.reduce((b, p) => Math.abs(p.threshold - PRIMARY.threshold) < Math.abs(b.threshold - PRIMARY.threshold) ? p : b, curve[0]);
+  if (!slider.dataset.touched) slider.value = curve.indexOf(locked);
+  const upd = () => { const p = curve[Number(slider.value)]; dot.setAttribute("cx", X(p.coverage)); dot.setAttribute("cy", Y(p.selective_error || 0));
+    $("#tau-out").textContent = `τ = ${p.threshold}: answer ${pct(p.coverage, 1)} on site, ${pct(p.selective_error, 1)} of those wrong, ${p.unsafe_accepts} unsafe accepts, ${p.deferred} deferred.` +
+      (MODE === PRIMARY.gate && p === locked ? " (locked on the calibration split)" : ""); };
+  slider.oninput = () => { slider.dataset.touched = "1"; upd(); }; upd();
+}
+document.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => { MODE = b.dataset.mode;
+  document.querySelectorAll("[data-mode]").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); delete $("#tau").dataset.touched; renderTau(); }));
+
+/* ------------------------------------------------ evidence */
+function renderEvidence() {
+  const p = PRIMARY;
+  if (!p) { $("#ev-tiles").replaceChildren(h("div", { class: "card" }, h("p", { class: "muted" }, "No results embedded. On the Nano: bash scripts/run_matrix.sh, then python scripts/build_deck.py reports/base/summary.json"))); return; }
+  $("#ev-banner").replaceChildren(...(SIM ? [h("div", { class: "banner" }, "SIMULATION data: these numbers check the plumbing, they are not model results.")] : []));
+  $("#ev-title").textContent = `Held-out test split · n=${p.cases} · ${String(p.model).split("/").pop()} · ${p.samples} samples`;
+  const t = (l, v, sub) => h("div", { class: "card tile" }, h("div", { class: "label" }, l), h("div", { class: "value" }, v), h("div", { class: "sub" }, sub));
+  $("#ev-tiles").replaceChildren(
+    t("Answered on site", pct(p.local_rate), `error among those: ${pct(p.selective_error, 1)} · unsafe: ${p.unsafe_accepts}`),
+    t("Category accuracy", pct(p.category_accuracy), p.category_ci ? `95% CI ${pct(p.category_ci[0])}–${pct(p.category_ci[1])} · rules-only ${pct(p.rules_baseline)}` : ""),
+    t("Median time per ticket", secs(LAT.p50), `p95 ${secs(LAT.p95)} · ${LAT.note}`),
+    t("PII leaked", `${p.pii_leaked}/${p.pii_planted}`, HARD ? `hard set: ${pct(HARD.category_accuracy)} accuracy, ${HARD.unsafe_accepts} unsafe` : "planted identifiers found in any output"));
+  const kinds = Object.keys(p.by_kind || {});
+  columns($("#ev-kind"), kinds, [{ name: "EdgeSupport", color: css("--s1"), values: kinds.map((k) => p.by_kind[k].category_accuracy) },
+                                  { name: "Rules only", color: css("--s2"), values: kinds.map((k) => p.by_kind[k].rules_category_accuracy) }]);
+  const ab = ["baseline", "schema", "full"].map((c) => [c, pick("test.jsonl", c)]).filter(([, r]) => r);
+  hbars($("#ev-ab"), ab.map(([c, r]) => ({ label: { baseline: "Original", schema: "+ strict schema", full: "+ BM25, all switches" }[c], v: r.local_rate, color: c === "full" ? css("--s1") : css("--muted") })), (v) => pct(v, 1));
+  hbars($("#ev-egress"), [{ label: "Cloud-only design", v: p.egress_cloud_only_b, color: css("--muted") }, { label: "EdgeSupport", v: p.egress_hybrid_b, color: css("--s1") }], bytes);
+}
+
+/* ------------------------------------------------ impact */
+function renderImpact() {
+  const p = PRIMARY, local = p ? p.local_rate : .5, egH = p ? p.egress_hybrid_b : 2000, egC = p ? p.egress_cloud_only_b : 6000;
+  const emp = +$("#emp").value, tix = +$("#tix").value, mins = +$("#min").value;
+  $("#v-emp").textContent = emp.toLocaleString(); $("#v-tix").textContent = tix; $("#v-min").textContent = mins;
+  const tickets = emp * tix;
+  const out = (l, v, sub) => h("div", { class: "card" }, h("div", { class: "ink2", style: "font-size:14px" }, l), h("div", { class: "out" }, v), h("div", { class: "assume" }, sub));
+  $("#impact-out").replaceChildren(
+    out("Tickets per year", Math.round(tickets).toLocaleString(), "employees × tickets each"),
+    out("Answered on the Nano", Math.round(tickets * local).toLocaleString(), `${pct(local)} answered on site`),
+    out("Technician hours freed", Math.round(tickets * local * mins / 60).toLocaleString(), `${mins} min each (your assumption)`),
+    out("Data off site per year", bytes(tickets * egH), `vs ${bytes(tickets * egC)} for a cloud-only design`));
+  $("#assume").textContent = p && !SIM ? "Rates from the embedded Nano run; minutes saved is an adjustable assumption, not a measurement." : "Example rates (no model run embedded). Minutes saved is an assumption.";
+}
+["emp", "tix", "min"].forEach((id) => $(`#${id}`).addEventListener("input", renderImpact));
+
+/* ------------------------------------------------ learned */
+function renderLearned() {
+  const card = (t, b) => h("div", { class: "card" }, h("h3", {}, t), h("p", { class: "ink2" }, b));
+  if (!PRIMARY) { $("#learned").replaceChildren(card("Fill after the Nano run", "This slide reads latency, tokens, sample-count and fine-tuning effects from the embedded results.")); return; }
+  const n1 = pick("test.jsonl", "full", 1), n5 = pick("test.jsonl", "full", 5), base = pick("test.jsonl", "baseline");
+  const items = [card("Batched sampling on GB10", `${PRIMARY.samples} samples per ticket in one request: median ${secs(LAT.p50)} (${LAT.note}), ~${Math.round(PRIMARY.prompt_tokens || 0)} prompt tokens.`)];
+  if (n1 || n5) items.push(card("How many samples?", `Answered on site: 1 sample ${pct(n1 && n1.local_rate)} (one answer cannot show agreement) · 3 samples ${pct(PRIMARY.local_rate)} · 5 samples ${pct(n5 && n5.local_rate)}.`));
+  if (base) items.push(card("Contract beats capability", `Enforcing the output schema and better retrieval moved on-site answers from ${pct(base.local_rate)} to ${pct(PRIMARY.local_rate)} with no training.`));
+  const ft = (ROWS || []).find((r) => String(r.run).startsWith("finetuned") && r.dataset === "test.jsonl" && String(r.run).endsWith("-full-n3"));
+  if (ft) items.push(card("Fine-tuning (LoRA on the Nano)", `On-site answers ${pct(PRIMARY.local_rate)} → ${pct(ft.local_rate)}; accuracy ${pct(PRIMARY.category_accuracy)} → ${pct(ft.category_accuracy)}.`));
+  if (PRIMARY.joules) items.push(card("Energy", `${PRIMARY.joules} J of GPU board energy per ticket (nvidia-smi).`));
+  $("#learned").replaceChildren(...items);
+}
+
+function renderAll() { renderConstraints(); renderArch(); renderTau(); renderEvidence(); renderImpact(); renderLearned(); }
+renderAll(); go(cur);
+</script>
+</body>
+</html>

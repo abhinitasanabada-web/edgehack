@@ -11,19 +11,22 @@ PATTERNS = [
     ("TOKEN", r"\b(?:sk-|hf_|ghp_)[A-Za-z0-9_-]{8,}\b"),
 ]
 
-def redact(text):
+def redact(text, skip=()):
     counts = {}
     for label, pattern in PATTERNS:
+        if label in skip:
+            continue
         text, count = re.subn(pattern, f"[REDACTED_{label}]", text, flags=re.I)
         if count:
             counts[label] = count
     return text, counts
 
-def sanitize(value):
+def sanitize(value, skip=()):
+    """skip: pattern labels to leave in place (e.g. IPV4 for an on-site model); egress always uses the full set."""
     counts = {}
     def visit(item):
         if isinstance(item, str):
-            clean, found = redact(item)
+            clean, found = redact(item, skip)
             for key, n in found.items():
                 counts[key] = counts.get(key, 0) + n
             return clean

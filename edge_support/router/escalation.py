@@ -11,59 +11,91 @@ HARD_REASONS = {"HIGH_RISK", "USER_REQUESTED", "TROUBLESHOOTING_FAILED", "HIGH_R
 def redact(value):
     return sanitize(value)[0]
 
-def assess(samples, requested_count, payload):
-    valid = [d for d in samples if d is not None]
-    if not valid:
-        incident=payload['incident']
-        hard=[]
-        if incident['high_risk'] or re.search(r"\b(smoke|burning smell|swollen battery|ransomware|data loss|sparks)\b",incident['complaint']+' '+incident['logs'],re.I): hard.append('HIGH_RISK')
-        if incident['specialist_requested']: hard.append('USER_REQUESTED')
-        if incident['troubleshooting_failed']: hard.append('TROUBLESHOOTING_FAILED')
-        return {"selected":None,"agreement":0.0,"valid_count":0,"requested_count":requested_count,
-                "telemetry_consistent":False,"evidence_supported":False,"base_reasons":["INVALID_MODEL_OUTPUT"]+hard}
-    votes = Counter((d.issue_category,d.recommended_action) for d in valid)
-    winner, count = votes.most_common(1)[0]
-    selected = next(d for d in valid if (d.issue_category,d.recommended_action)==winner)
-    known = {s["id"] for s in payload["signals"]} | {"kb:"+k["source"] for k in payload["knowledge"]}
-    cited = set(selected.evidence_ids)
-    supported = bool(selected.evidence and cited and cited <= known)
-    telemetry = payload["incident"]["telemetry"]
-    observed_metrics = [f for f,c in METRIC_CATEGORIES.items() if c==selected.issue_category and telemetry.get(f) is not None]
-    relevant = [s for s in payload["signals"] if s["category"]==selected.issue_category]
-    consistent = not observed_metrics or bool(relevant)
-    if selected.issue_category=="dns_network" and (telemetry.get("network") or {}).get("dns_ok") is True:
-        consistent = False
-    # A measured category requires a matching signal citation, not an unrelated runbook.
-    if observed_metrics or relevant:
-        supported = supported and any(s["id"] in cited for s in relevant)
+RISK_PHRASE = r"\b(smoke|burning smell|swollen battery|battery swelling|ransomware|data loss|sparks)\b"
+ACTION_CATEGORIES = {"flush_dns":{"dns_network"},"restart_dns_client":{"dns_network"},
+                     "close_demo_process":{"cpu_saturation","memory_pressure"},"clear_temp":{"disk_pressure"}}
+
+def _hard(incident, valid):
     reasons = []
-    incident = payload["incident"]
     if incident["specialist_requested"]: reasons.append("USER_REQUESTED")
     if incident["troubleshooting_failed"]: reasons.append("TROUBLESHOOTING_FAILED")
-    if incident["high_risk"] or re.search(r"\b(smoke|burning smell|swollen battery|battery swelling|ransomware|data loss|sparks)\b",incident["complaint"]+" "+incident["logs"],re.I) or any(d.severity in {"high","critical"} for d in valid):
-        reasons.append("HIGH_RISK")
-    if any(get_action(d.recommended_action) and get_action(d.recommended_action).high_risk for d in valid): reasons.append("HIGH_RISK_ACTION")
-    if selected.issue_category not in CATEGORIES: reasons.append("UNSUPPORTED_CATEGORY")
-    if not get_action(selected.recommended_action): reasons.append("UNKNOWN_ACTION")
-    action_categories={"flush_dns":{"dns_network"},"restart_dns_client":{"dns_network"},
-                       "close_demo_process":{"cpu_saturation","memory_pressure"},"clear_temp":{"disk_pressure"}}
-    if selected.recommended_action in action_categories and selected.issue_category not in action_categories[selected.recommended_action]:
-        reasons.append("ACTION_CATEGORY_MISMATCH")
-    if any(d.escalate for d in valid) or selected.recommended_action=="no_action_escalate": reasons.append("MODEL_REQUESTED")
-    if any(d.insufficient_evidence for d in valid) or not supported: reasons.append("INSUFFICIENT_EVIDENCE")
-    if not consistent: reasons.append("TELEMETRY_CONFLICT")
-    if len(valid)!=requested_count: reasons.append("INVALID_MODEL_OUTPUT")
-    return {"selected":selected.model_dump(), "agreement":count/requested_count,"valid_count":len(valid),
-            "requested_count":requested_count, "telemetry_consistent":consistent,"evidence_supported":supported,
-            "base_reasons":reasons}
+    if incident["high_risk"] or re.search(RISK_PHRASE, incident["complaint"]+" "+incident["logs"], re.I) \
+            or any(d.severity in {"high","critical"} for d in valid):
+        reasons.append("HIGH_RISK")      # strict in every gate mode: one sample seeing danger is enough
+    return reasons
 
-def route_assessment(assessment, threshold):
-    reasons = list(assessment["base_reasons"])
+def _supported(d, known, relevant, measured):
+    cited = set(d.evidence_ids)
+    ok = bool(d.evidence and cited and cited <= known)
+    # A measured category requires a matching signal citation, not an unrelated runbook.
+    return ok and any(s["id"] in cited for s in relevant) if measured else ok
+
+def assess(samples, requested_count, payload, gate_mode="any"):
+    """Reasons are computed for BOTH gate modes (reasons_by_mode) so one model run can be swept either way.
+    any      (original): a single hedging, weak-evidence, high-risk-action or malformed sample vetoes LOCAL.
+    majority           : those uncertainty signals must come from at least half the valid samples; malformed
+                         samples only lower agreement (they already count against it). Risk gates stay strict."""
+    valid = [d for d in samples if d is not None]
+    votes_detail = [None if d is None else {"category":d.issue_category,"action":d.recommended_action,
+                    "severity":d.severity,"escalate":d.escalate,"insufficient_evidence":d.insufficient_evidence,
+                    "evidence_ids":d.evidence_ids} for d in samples]
+    incident = payload["incident"]
+    if not valid:
+        hard = _hard(incident, [])
+        reasons = ["INVALID_MODEL_OUTPUT"] + hard
+        return {"selected":None,"agreement":0.0,"valid_count":0,"requested_count":requested_count,
+                "telemetry_consistent":False,"evidence_supported":False,"base_reasons":reasons,
+                "reasons_by_mode":{"any":list(reasons),"majority":list(reasons)},"gate_mode":gate_mode,
+                "votes":votes_detail}
+    votes = Counter((d.issue_category,d.recommended_action) for d in valid)
+    winner, count = votes.most_common(1)[0]
+    cluster = [d for d in valid if (d.issue_category,d.recommended_action)==winner]
+    known = {s["id"] for s in payload["signals"]} | {"kb:"+k["source"] for k in payload["knowledge"]}
+    category = winner[0]
+    telemetry = incident["telemetry"]
+    observed_metrics = [f for f,c in METRIC_CATEGORIES.items() if c==category and telemetry.get(f) is not None]
+    relevant = [s for s in payload["signals"] if s["category"]==category]
+    measured = bool(observed_metrics or relevant)
+    consistent = not observed_metrics or bool(relevant)
+    if category=="dns_network" and (telemetry.get("network") or {}).get("dns_ok") is True:
+        consistent = False
+    first = cluster[0]
+    best = next((d for d in cluster if _supported(d, known, relevant, measured)), first)
+    shared = []
+    if category not in CATEGORIES: shared.append("UNSUPPORTED_CATEGORY")
+    if not get_action(winner[1]): shared.append("UNKNOWN_ACTION")
+    if winner[1] in ACTION_CATEGORIES and category not in ACTION_CATEGORIES[winner[1]]:
+        shared.append("ACTION_CATEGORY_MISMATCH")
+    if not consistent: shared.append("TELEMETRY_CONFLICT")
+    risky = lambda d: bool(get_action(d.recommended_action) and get_action(d.recommended_action).high_risk)
+    half = lambda flag: sum(1 for d in valid if flag(d)) * 2 >= len(valid)
+    hard = _hard(incident, valid)
+    any_mode = hard + (["HIGH_RISK_ACTION"] if any(risky(d) for d in valid) else []) + shared
+    if any(d.escalate for d in valid) or winner[1]=="no_action_escalate": any_mode.append("MODEL_REQUESTED")
+    if any(d.insufficient_evidence for d in valid) or not _supported(first, known, relevant, measured):
+        any_mode.append("INSUFFICIENT_EVIDENCE")
+    if len(valid)!=requested_count: any_mode.append("INVALID_MODEL_OUTPUT")
+    majority = hard + (["HIGH_RISK_ACTION"] if risky(best) or half(risky) else []) + shared
+    if half(lambda d: d.escalate) or winner[1]=="no_action_escalate": majority.append("MODEL_REQUESTED")
+    if half(lambda d: d.insufficient_evidence) or not _supported(best, known, relevant, measured):
+        majority.append("INSUFFICIENT_EVIDENCE")
+    order = lambda reasons: list(dict.fromkeys(reasons))
+    by_mode = {"any":order(any_mode),"majority":order(majority)}
+    selected = best if gate_mode=="majority" else first
+    return {"selected":selected.model_dump(), "agreement":count/requested_count,"valid_count":len(valid),
+            "requested_count":requested_count, "telemetry_consistent":consistent,
+            "evidence_supported":_supported(selected, known, relevant, measured),
+            "base_reasons":list(by_mode[gate_mode]),"reasons_by_mode":by_mode,"gate_mode":gate_mode,"votes":votes_detail}
+
+def route_assessment(assessment, threshold, gate_mode=None):
+    """gate_mode=None uses the mode the assessment was made with; pass "any"/"majority" to re-route offline."""
+    by_mode = assessment.get("reasons_by_mode") or {}
+    reasons = list(by_mode[gate_mode] if gate_mode in by_mode else assessment["base_reasons"])
     if assessment["requested_count"] < 2:
         reasons.append("INSUFFICIENT_SAMPLES")
     if assessment["agreement"] < threshold: reasons.append("LOW_AGREEMENT")
     return {"decision":"ESCALATE" if reasons else "LOCAL", "reason_codes":list(dict.fromkeys(reasons)),
-            "agreement_threshold":threshold,"cloud_called":False}
+            "agreement_threshold":threshold,"gate_mode":gate_mode or assessment.get("gate_mode","any"),"cloud_called":False}
 
 def decide_route(diagnosis, cloud_enabled=False):
     """Compatibility entry point refuses authorization without measured evidence."""

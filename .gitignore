@@ -5,7 +5,12 @@
 __pycache__/
 .pytest_cache/
 data/index.json
-reports/
+reports/*
+!reports/*/
+reports/*/*
+!reports/*/summary.md
+!reports/*/summary.json
+!reports/*/threshold-*.json
 *.log
 .DS_Store
 finetune/data/
