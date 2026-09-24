@@ -1,21 +1,21 @@
-from __future__ import annotations
-
 from edge_support.inference.output_schema import VerificationResult
 
-
-def verify(action_id: str, before: dict, after: dict) -> VerificationResult:
-    if action_id in {"flush_dns", "restart_dns_client"}:
-        before_ok = before.get("network", {}).get("dns_ok")
-        after_ok = after.get("network", {}).get("dns_ok")
-        return VerificationResult(action_id=action_id, verified=after_ok is True, message=f"DNS before={before_ok}; after={after_ok}", before=before, after=after)
-    if action_id == "close_demo_process":
-        before_names = {p.get("name", "").lower() for p in before.get("processes", [])}
-        after_names = {p.get("name", "").lower() for p in after.get("processes", [])}
-        removed = before_names - after_names
-        return VerificationResult(action_id=action_id, verified=bool(removed), message=f"Removed processes: {sorted(removed)}", before=before, after=after)
-    if action_id == "clear_temp":
-        before_bytes = before.get("disk", {}).get("edge_temp_bytes")
-        after_bytes = after.get("disk", {}).get("edge_temp_bytes")
-        return VerificationResult(action_id=action_id, verified=after_bytes is not None and after_bytes <= (before_bytes or 0), message="Approved temp workspace checked", before=before, after=after)
-    return VerificationResult(action_id=action_id, verified=False, message="No verification rule for this action", before=before, after=after)
-
+def verify(action_id,before,after,target_process=None,action_success=False):
+    verified=False
+    message="No verified improvement; obtain more evidence or escalate to human support"
+    if action_success and action_id in {"flush_dns","restart_dns_client"}:
+        verified=(before.get("network") or {}).get("dns_ok") is False and (after.get("network") or {}).get("dns_ok") is True
+        message="DNS changed from failed to successful" if verified else message
+    elif action_success and action_id=="close_demo_process" and target_process:
+        normalize=lambda n:str(n).lower().removesuffix(".exe")
+        target=normalize(target_process)
+        old={normalize(p.get("name","")) for p in before.get("processes",[])}
+        new={normalize(p.get("name","")) for p in after.get("processes",[])}
+        verified=target in old and target not in new
+        message="Requested process exited; this alone does not prove memory pressure was resolved" if verified else message
+    elif action_success and action_id=="clear_temp":
+        old=(before.get("disk") or {}).get("edge_temp_bytes")
+        new=(after.get("disk") or {}).get("edge_temp_bytes")
+        verified=type(old) in (int,float) and type(new) in (int,float) and 0<=new<old
+        message="Approved temporary workspace shrank" if verified else message
+    return VerificationResult(action_id=action_id,verified=verified,message=message,before=before,after=after)

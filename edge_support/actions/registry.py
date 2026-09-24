@@ -15,7 +15,7 @@ ACTION_REGISTRY: dict[str, ActionSpec] = {
     "flush_dns": ActionSpec("flush_dns", "Flush the Windows DNS resolver cache."),
     "restart_dns_client": ActionSpec("restart_dns_client", "Restart the approved Windows DNS Client service.", high_risk=True),
     "close_demo_process": ActionSpec("close_demo_process", "Close a process only when its name is on the demo allowlist."),
-    "clear_temp": ActionSpec("clear_temp", "Clear only the EdgeSupport-approved temporary workspace."),
+    "clear_temp": ActionSpec("clear_temp", "Manual IT review of approved temporary workspace.", high_risk=True),
     "collect_more_telemetry": ActionSpec("collect_more_telemetry", "Collect another endpoint snapshot.", requires_confirmation=False),
     "no_action_escalate": ActionSpec("no_action_escalate", "Do not change the endpoint; prepare an escalation.", requires_confirmation=False),
 }
