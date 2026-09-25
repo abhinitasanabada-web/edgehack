@@ -211,7 +211,7 @@ def main():
     env=Settings.from_env()
     locked=json.loads(Path(args.threshold_file).read_text()) if args.threshold_file else None
     threshold=args.threshold if args.threshold is not None else (locked['threshold'] if locked else env.agreement_threshold)
-    if not 0<=threshold<=1.01: parser.error('threshold must be in [0,1]')
+    if not 0<=threshold<=1.01: parser.error('threshold must be in [0,1.01]; 1.01 defers every ticket')
     settings=env.model_copy(update={'simulation_mode':args.simulate,'sample_count':args.samples,
         'agreement_threshold':threshold,'enable_cloud':False,'enable_large_local':args.large and env.enable_large_local,
         **({'gate_mode':locked['gate_mode']} if locked else {})})

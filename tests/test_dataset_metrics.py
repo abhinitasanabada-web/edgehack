@@ -113,3 +113,14 @@ def test_threshold_sweep_scores_small_tier_not_final_tier(small_correct, final_c
     assert curve[1]['accepted_local'] == 0
     selected = choose({'any': curve}, 0)
     assert selected['threshold'] == (.8 if small_correct else 1.01)
+
+
+def test_calibrated_defer_all_threshold_loads_in_runtime(monkeypatch):
+    from edge_support.router.escalation import route_assessment
+    pick = choose({'any': []}, .05)
+    monkeypatch.setenv('AGREEMENT_THRESHOLD', str(pick['threshold']))
+    settings = Settings.from_env()
+    assessment = {'base_reasons': [], 'requested_count': 3, 'agreement': 1.0}
+    assert route_assessment(assessment, settings.agreement_threshold)['decision'] == 'ESCALATE'
+    with pytest.raises(ValueError):
+        Settings(agreement_threshold=1.02)

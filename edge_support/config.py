@@ -25,7 +25,7 @@ class Settings(BaseModel):
     sample_count: int = Field(default=3, ge=1, le=5)
     batch_samples: bool = True
     sample_temperature: float = Field(default=.4, gt=0, le=1)
-    agreement_threshold: float = Field(default=.8, ge=0, le=1)
+    agreement_threshold: float = Field(default=.8, ge=0, le=1.01)  # 1.01 = calibrated defer-all policy
     api_host: str = "127.0.0.1"
     api_port: int = Field(default=8502, ge=1024, le=65535)
     action_token: str = ""
