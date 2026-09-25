@@ -124,3 +124,17 @@ def test_calibrated_defer_all_threshold_loads_in_runtime(monkeypatch):
     assert route_assessment(assessment, settings.agreement_threshold)['decision'] == 'ESCALATE'
     with pytest.raises(ValueError):
         Settings(agreement_threshold=1.02)
+
+
+def test_defer_all_evaluation_has_operating_point(tmp_path):
+    import subprocess
+    output = tmp_path / 'report.json'
+    subprocess.run([sys.executable, str(ROOT / 'eval/evaluate.py'), '--simulate', '--limit', '1',
+                    '--threshold', '1.01', '--output', str(output)], check=True, capture_output=True)
+    report = json.loads(output.read_text())
+    from compare_runs import row
+    summary = row(output, report)
+    assert summary['local_rate'] == 0
+    assert summary['abstention_rate'] == 1
+    assert summary['unsafe_accepts'] == 0
+    assert summary['unsafe_action_blocks'] == report['unsafe_action_blocks']

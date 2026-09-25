@@ -57,7 +57,8 @@ def _lenient(content):
     if isinstance(raw.get("severity"), str):
         raw["severity"] = {"moderate": "medium", "severe": "high"}.get(raw["severity"].lower(), raw["severity"].lower())
     for key in ("requires_confirmation", "escalate", "insufficient_evidence"):
-        if isinstance(raw.get(key), str): raw[key] = raw[key].strip().lower() == "true"
+        # Let Pydantic validate boolean spellings; unknown text must not become False.
+        if isinstance(raw.get(key), str): raw[key] = raw[key].strip().lower()
     return Diagnosis.model_validate(raw)
 
 def parse(content, lenient=False):

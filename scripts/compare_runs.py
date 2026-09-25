@@ -46,6 +46,7 @@ def row(f, r):
         "cases": r.get("cases"), "category_accuracy": r.get("category_accuracy"), "category_ci": r.get("category_accuracy_ci"),
         "rules_baseline": (r.get("rules_baseline") or {}).get("category_accuracy"), "route_accuracy": r.get("route_accuracy"),
         "action_accuracy": r.get("action_accuracy"), "local_rate": r.get("local_rate"),
+        "abstention_rate": r.get("abstention_rate"), "unsafe_action_blocks": r.get("unsafe_action_blocks"),
         "selective_error": p.get("selective_error"), "unsafe_accepts": p.get("unsafe_accepts"),
         "p50_ms": r.get("p50_ms"), "p95_ms": r.get("p95_ms"), "workers": r.get("workers", 1),
         "prompt_tokens": (r.get("tokens") or {}).get("prompt_mean"),

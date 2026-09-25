@@ -223,3 +223,13 @@ def test_complete_json_at_token_limit_is_invalid(monkeypatch, diag, batched, len
     diagnosis, stats = result
     assert diagnosis is None and stats['valid'] is False and stats['truncated']
     assert stats['total_tokens'] == 150
+
+
+@pytest.mark.parametrize('field', ['escalate', 'insufficient_evidence', 'requires_confirmation'])
+def test_lenient_boolean_flags_do_not_silently_disable_safety(diag, field):
+    raw = diag.model_dump()
+    raw[field] = ' yes '
+    assert getattr(parse(json.dumps(raw), lenient=True), field) is True
+    raw[field] = 'uncertain'
+    with pytest.raises(ValueError):
+        parse(json.dumps(raw), lenient=True)

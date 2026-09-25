@@ -233,7 +233,7 @@ def main():
     latency=[r['metrics']['latency_ms'] for r in good]
     n=len(rows)
     # exact fractions (2/3, not 0.6667) so "2 of 3 agree" is its own operating point
-    grid=sorted({round(t,9):t for t in BASE_THRESHOLDS+[i/args.samples for i in range(args.samples+1)]}.values())
+    grid=sorted({round(t,9):t for t in BASE_THRESHOLDS+[threshold]+[i/args.samples for i in range(args.samples+1)]}.values())
     sweeps={mode:sweep(rows,grid,mode) for mode in ('any','majority')}
     # --- cloud arms (explicit flags only) ---
     cloud_cfg=env.model_copy(update={'sample_count':args.samples})
