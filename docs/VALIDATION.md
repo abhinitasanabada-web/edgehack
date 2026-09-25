@@ -68,3 +68,8 @@ and `git diff --check` pass.
 
 These results supersede the earlier API skips for local automated validation only.
 Real Nano inference/performance, GPU training, cloud calls and Windows execution remain unvalidated.
+
+
+## Combined branch and live GPU validation
+
+The newer [team GPU validation record](TEAM_GPU_VALIDATION.md) supersedes the earlier “Nano not tested” status: 107 tests pass on both hosts, and real Qwen inference plus the integrated launcher/API/dashboard were exercised. See that record for the bounded benchmark, code revisions, results and remaining limits.

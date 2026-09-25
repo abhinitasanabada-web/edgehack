@@ -1,0 +1,26 @@
+{
+  "threshold": 1.0,
+  "gate_mode": "any",
+  "coverage": 0.4666666666666667,
+  "selective_error": 0.0,
+  "selective_error_ci": [
+    0,
+    0.2153
+  ],
+  "target_error": 0.05,
+  "dataset": "calib.jsonl",
+  "model": "fixture",
+  "sample_count": 3,
+  "switches": {
+    "strict_schema": false,
+    "compact_prompt": false,
+    "gate_mode": "any",
+    "lenient_parse": false,
+    "retrieval": "legacy",
+    "local_redaction": "full",
+    "batch_samples": true,
+    "max_output_tokens": null,
+    "sample_temperature": 0.4
+  },
+  "created": "2026-09-25T06:44:41+00:00"
+}

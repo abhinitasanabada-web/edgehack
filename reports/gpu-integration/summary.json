@@ -1,0 +1,1488 @@
+[
+ {
+  "run": "gpu-baseline",
+  "file": "baseline-test.json",
+  "dataset": "test.jsonl",
+  "mode": "LOCAL_MODEL",
+  "model": "hf:Qwen/Qwen2.5-7B-Instruct",
+  "samples": 3,
+  "gate": "majority",
+  "threshold": 1.0,
+  "switches_on": "gate_mode=majority",
+  "cases": 20,
+  "category_accuracy": 0.95,
+  "category_ci": [
+   0.7639,
+   0.9911
+  ],
+  "rules_baseline": 0.75,
+  "route_accuracy": 0.05,
+  "action_accuracy": 0.2,
+  "local_rate": 0.0,
+  "abstention_rate": 1.0,
+  "unsafe_action_blocks": 14,
+  "selective_error": null,
+  "unsafe_accepts": 0,
+  "p50_ms": 14879.21,
+  "p95_ms": 19611.16,
+  "workers": 4,
+  "prompt_tokens": 1391,
+  "pii_leaked": 0,
+  "pii_planted": 4,
+  "egress_hybrid_b": 4612.6,
+  "egress_cloud_only_b": 6241.6,
+  "cost_hybrid_1k": null,
+  "cost_cloud_only_1k": null,
+  "cost_measured": false,
+  "joules": 177.6,
+  "sweep": {
+   "any": [
+    {
+     "threshold": 0.0,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 14,
+     "unsafe_action_rate": 0.7
+    },
+    {
+     "threshold": 0.3333333333333333,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 14,
+     "unsafe_action_rate": 0.7
+    },
+    {
+     "threshold": 0.4,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 14,
+     "unsafe_action_rate": 0.7
+    },
+    {
+     "threshold": 0.6,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 14,
+     "unsafe_action_rate": 0.7
+    },
+    {
+     "threshold": 0.6666666666666666,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 14,
+     "unsafe_action_rate": 0.7
+    },
+    {
+     "threshold": 0.7,
+     "incidents": 20,
+     "accepted_local": 0,
+     "coverage": 0.0,
+     "selective_error": null,
+     "selective_error_ci": null,
+     "unsafe_accepts": 0,
+     "deferred": 20,
+     "abstained": 20,
+     "abstention_rate": 1.0,
+     "unsafe_action_blocks": 14,
+     "unsafe_action_rate": 0.7
+    },
+    {
+     "threshold": 0.8,
+     "incidents": 20,
+     "accepted_local": 0,
+     "coverage": 0.0,
+     "selective_error": null,
+     "selective_error_ci": null,
+     "unsafe_accepts": 0,
+     "deferred": 20,
+     "abstained": 20,
+     "abstention_rate": 1.0,
+     "unsafe_action_blocks": 14,
+     "unsafe_action_rate": 0.7
+    },
+    {
+     "threshold": 0.9,
+     "incidents": 20,
+     "accepted_local": 0,
+     "coverage": 0.0,
+     "selective_error": null,
+     "selective_error_ci": null,
+     "unsafe_accepts": 0,
+     "deferred": 20,
+     "abstained": 20,
+     "abstention_rate": 1.0,
+     "unsafe_action_blocks": 14,
+     "unsafe_action_rate": 0.7
+    },
+    {
+     "threshold": 1.0,
+     "incidents": 20,
+     "accepted_local": 0,
+     "coverage": 0.0,
+     "selective_error": null,
+     "selective_error_ci": null,
+     "unsafe_accepts": 0,
+     "deferred": 20,
+     "abstained": 20,
+     "abstention_rate": 1.0,
+     "unsafe_action_blocks": 14,
+     "unsafe_action_rate": 0.7
+    }
+   ],
+   "majority": [
+    {
+     "threshold": 0.0,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 14,
+     "unsafe_action_rate": 0.7
+    },
+    {
+     "threshold": 0.3333333333333333,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 14,
+     "unsafe_action_rate": 0.7
+    },
+    {
+     "threshold": 0.4,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 14,
+     "unsafe_action_rate": 0.7
+    },
+    {
+     "threshold": 0.6,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 14,
+     "unsafe_action_rate": 0.7
+    },
+    {
+     "threshold": 0.6666666666666666,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 14,
+     "unsafe_action_rate": 0.7
+    },
+    {
+     "threshold": 0.7,
+     "incidents": 20,
+     "accepted_local": 0,
+     "coverage": 0.0,
+     "selective_error": null,
+     "selective_error_ci": null,
+     "unsafe_accepts": 0,
+     "deferred": 20,
+     "abstained": 20,
+     "abstention_rate": 1.0,
+     "unsafe_action_blocks": 14,
+     "unsafe_action_rate": 0.7
+    },
+    {
+     "threshold": 0.8,
+     "incidents": 20,
+     "accepted_local": 0,
+     "coverage": 0.0,
+     "selective_error": null,
+     "selective_error_ci": null,
+     "unsafe_accepts": 0,
+     "deferred": 20,
+     "abstained": 20,
+     "abstention_rate": 1.0,
+     "unsafe_action_blocks": 14,
+     "unsafe_action_rate": 0.7
+    },
+    {
+     "threshold": 0.9,
+     "incidents": 20,
+     "accepted_local": 0,
+     "coverage": 0.0,
+     "selective_error": null,
+     "selective_error_ci": null,
+     "unsafe_accepts": 0,
+     "deferred": 20,
+     "abstained": 20,
+     "abstention_rate": 1.0,
+     "unsafe_action_blocks": 14,
+     "unsafe_action_rate": 0.7
+    },
+    {
+     "threshold": 1.0,
+     "incidents": 20,
+     "accepted_local": 0,
+     "coverage": 0.0,
+     "selective_error": null,
+     "selective_error_ci": null,
+     "unsafe_accepts": 0,
+     "deferred": 20,
+     "abstained": 20,
+     "abstention_rate": 1.0,
+     "unsafe_action_blocks": 14,
+     "unsafe_action_rate": 0.7
+    }
+   ]
+  },
+  "by_kind": {
+   "log": {
+    "n": 3,
+    "category_accuracy": 1.0,
+    "route_accuracy": 0.0,
+    "local_rate": 0.0,
+    "abstention_rate": 1.0,
+    "unsafe_action_block_rate": 0.6666666666666666,
+    "rules_category_accuracy": 0.3333333333333333
+   },
+   "telemetry": {
+    "n": 10,
+    "category_accuracy": 1.0,
+    "route_accuracy": 0.0,
+    "local_rate": 0.0,
+    "abstention_rate": 1.0,
+    "unsafe_action_block_rate": 0.9,
+    "rules_category_accuracy": 1.0
+   },
+   "text_only": {
+    "n": 6,
+    "category_accuracy": 0.8333333333333334,
+    "route_accuracy": 0.0,
+    "local_rate": 0.0,
+    "abstention_rate": 1.0,
+    "unsafe_action_block_rate": 0.5,
+    "rules_category_accuracy": 0.5
+   },
+   "unsupported": {
+    "n": 1,
+    "category_accuracy": 1.0,
+    "route_accuracy": 1.0,
+    "local_rate": 0.0,
+    "abstention_rate": 1.0,
+    "unsafe_action_block_rate": 0.0,
+    "rules_category_accuracy": 1.0
+   }
+  },
+  "timestamp": "2026-09-25T06:41:30+00:00"
+ },
+ {
+  "run": "gpu-full",
+  "file": "full-test.json",
+  "dataset": "test.jsonl",
+  "mode": "LOCAL_MODEL",
+  "model": "hf:Qwen/Qwen2.5-7B-Instruct",
+  "samples": 3,
+  "gate": "any",
+  "threshold": 1.0,
+  "switches_on": "strict_schema,compact_prompt,lenient_parse,retrieval=bm25,local_redaction=keep_network",
+  "cases": 20,
+  "category_accuracy": 0.85,
+  "category_ci": [
+   0.6396,
+   0.9476
+  ],
+  "rules_baseline": 0.75,
+  "route_accuracy": 0.2,
+  "action_accuracy": 0.8,
+  "local_rate": 0.15,
+  "abstention_rate": 0.85,
+  "unsafe_action_blocks": 0,
+  "selective_error": 0.0,
+  "unsafe_accepts": 0,
+  "p50_ms": 10287.419999999998,
+  "p95_ms": 13153.26,
+  "workers": 4,
+  "prompt_tokens": 903,
+  "pii_leaked": 0,
+  "pii_planted": 4,
+  "egress_hybrid_b": 129.8,
+  "egress_cloud_only_b": 4195.8,
+  "cost_hybrid_1k": null,
+  "cost_cloud_only_1k": null,
+  "cost_measured": false,
+  "joules": 124.9,
+  "sweep": {
+   "any": [
+    {
+     "threshold": 0.0,
+     "incidents": 20,
+     "accepted_local": 3,
+     "coverage": 0.15,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.5615
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 17,
+     "abstained": 17,
+     "abstention_rate": 0.85,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.3333333333333333,
+     "incidents": 20,
+     "accepted_local": 3,
+     "coverage": 0.15,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.5615
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 17,
+     "abstained": 17,
+     "abstention_rate": 0.85,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.4,
+     "incidents": 20,
+     "accepted_local": 3,
+     "coverage": 0.15,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.5615
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 17,
+     "abstained": 17,
+     "abstention_rate": 0.85,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.6,
+     "incidents": 20,
+     "accepted_local": 3,
+     "coverage": 0.15,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.5615
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 17,
+     "abstained": 17,
+     "abstention_rate": 0.85,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.6666666666666666,
+     "incidents": 20,
+     "accepted_local": 3,
+     "coverage": 0.15,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.5615
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 17,
+     "abstained": 17,
+     "abstention_rate": 0.85,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.7,
+     "incidents": 20,
+     "accepted_local": 3,
+     "coverage": 0.15,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.5615
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 17,
+     "abstained": 17,
+     "abstention_rate": 0.85,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.8,
+     "incidents": 20,
+     "accepted_local": 3,
+     "coverage": 0.15,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.5615
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 17,
+     "abstained": 17,
+     "abstention_rate": 0.85,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.9,
+     "incidents": 20,
+     "accepted_local": 3,
+     "coverage": 0.15,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.5615
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 17,
+     "abstained": 17,
+     "abstention_rate": 0.85,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 1.0,
+     "incidents": 20,
+     "accepted_local": 3,
+     "coverage": 0.15,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.5615
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 17,
+     "abstained": 17,
+     "abstention_rate": 0.85,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    }
+   ],
+   "majority": [
+    {
+     "threshold": 0.0,
+     "incidents": 20,
+     "accepted_local": 3,
+     "coverage": 0.15,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.5615
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 17,
+     "abstained": 17,
+     "abstention_rate": 0.85,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.3333333333333333,
+     "incidents": 20,
+     "accepted_local": 3,
+     "coverage": 0.15,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.5615
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 17,
+     "abstained": 17,
+     "abstention_rate": 0.85,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.4,
+     "incidents": 20,
+     "accepted_local": 3,
+     "coverage": 0.15,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.5615
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 17,
+     "abstained": 17,
+     "abstention_rate": 0.85,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.6,
+     "incidents": 20,
+     "accepted_local": 3,
+     "coverage": 0.15,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.5615
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 17,
+     "abstained": 17,
+     "abstention_rate": 0.85,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.6666666666666666,
+     "incidents": 20,
+     "accepted_local": 3,
+     "coverage": 0.15,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.5615
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 17,
+     "abstained": 17,
+     "abstention_rate": 0.85,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.7,
+     "incidents": 20,
+     "accepted_local": 3,
+     "coverage": 0.15,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.5615
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 17,
+     "abstained": 17,
+     "abstention_rate": 0.85,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.8,
+     "incidents": 20,
+     "accepted_local": 3,
+     "coverage": 0.15,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.5615
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 17,
+     "abstained": 17,
+     "abstention_rate": 0.85,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.9,
+     "incidents": 20,
+     "accepted_local": 3,
+     "coverage": 0.15,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.5615
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 17,
+     "abstained": 17,
+     "abstention_rate": 0.85,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 1.0,
+     "incidents": 20,
+     "accepted_local": 3,
+     "coverage": 0.15,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.5615
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 17,
+     "abstained": 17,
+     "abstention_rate": 0.85,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    }
+   ]
+  },
+  "by_kind": {
+   "log": {
+    "n": 3,
+    "category_accuracy": 0.6666666666666666,
+    "route_accuracy": 0.0,
+    "local_rate": 0.0,
+    "abstention_rate": 1.0,
+    "unsafe_action_block_rate": 0.0,
+    "rules_category_accuracy": 0.3333333333333333
+   },
+   "telemetry": {
+    "n": 10,
+    "category_accuracy": 1.0,
+    "route_accuracy": 0.3,
+    "local_rate": 0.3,
+    "abstention_rate": 0.7,
+    "unsafe_action_block_rate": 0.0,
+    "rules_category_accuracy": 1.0
+   },
+   "text_only": {
+    "n": 6,
+    "category_accuracy": 0.6666666666666666,
+    "route_accuracy": 0.0,
+    "local_rate": 0.0,
+    "abstention_rate": 1.0,
+    "unsafe_action_block_rate": 0.0,
+    "rules_category_accuracy": 0.5
+   },
+   "unsupported": {
+    "n": 1,
+    "category_accuracy": 1.0,
+    "route_accuracy": 1.0,
+    "local_rate": 0.0,
+    "abstention_rate": 1.0,
+    "unsafe_action_block_rate": 0.0,
+    "rules_category_accuracy": 1.0
+   }
+  },
+  "timestamp": "2026-09-25T06:44:18+00:00"
+ },
+ {
+  "run": "gpu-baseline",
+  "file": "baseline-test_hard.json",
+  "dataset": "test_hard.jsonl",
+  "mode": "LOCAL_MODEL",
+  "model": "hf:Qwen/Qwen2.5-7B-Instruct",
+  "samples": 3,
+  "gate": "majority",
+  "threshold": 1.0,
+  "switches_on": "gate_mode=majority",
+  "cases": 20,
+  "category_accuracy": 0.9,
+  "category_ci": [
+   0.699,
+   0.9721
+  ],
+  "rules_baseline": 0.75,
+  "route_accuracy": 0.2,
+  "action_accuracy": 0.05,
+  "local_rate": 0.0,
+  "abstention_rate": 1.0,
+  "unsafe_action_blocks": 18,
+  "selective_error": null,
+  "unsafe_accepts": 0,
+  "p50_ms": 14889.015,
+  "p95_ms": 17013.76,
+  "workers": 4,
+  "prompt_tokens": 1422.8,
+  "pii_leaked": 0,
+  "pii_planted": 0,
+  "egress_hybrid_b": 3033.4,
+  "egress_cloud_only_b": 6299.3,
+  "cost_hybrid_1k": null,
+  "cost_cloud_only_1k": null,
+  "cost_measured": false,
+  "joules": 182.4,
+  "sweep": {
+   "any": [
+    {
+     "threshold": 0.0,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 18,
+     "unsafe_action_rate": 0.9
+    },
+    {
+     "threshold": 0.3333333333333333,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 18,
+     "unsafe_action_rate": 0.9
+    },
+    {
+     "threshold": 0.4,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 18,
+     "unsafe_action_rate": 0.9
+    },
+    {
+     "threshold": 0.6,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 18,
+     "unsafe_action_rate": 0.9
+    },
+    {
+     "threshold": 0.6666666666666666,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 18,
+     "unsafe_action_rate": 0.9
+    },
+    {
+     "threshold": 0.7,
+     "incidents": 20,
+     "accepted_local": 0,
+     "coverage": 0.0,
+     "selective_error": null,
+     "selective_error_ci": null,
+     "unsafe_accepts": 0,
+     "deferred": 20,
+     "abstained": 20,
+     "abstention_rate": 1.0,
+     "unsafe_action_blocks": 18,
+     "unsafe_action_rate": 0.9
+    },
+    {
+     "threshold": 0.8,
+     "incidents": 20,
+     "accepted_local": 0,
+     "coverage": 0.0,
+     "selective_error": null,
+     "selective_error_ci": null,
+     "unsafe_accepts": 0,
+     "deferred": 20,
+     "abstained": 20,
+     "abstention_rate": 1.0,
+     "unsafe_action_blocks": 18,
+     "unsafe_action_rate": 0.9
+    },
+    {
+     "threshold": 0.9,
+     "incidents": 20,
+     "accepted_local": 0,
+     "coverage": 0.0,
+     "selective_error": null,
+     "selective_error_ci": null,
+     "unsafe_accepts": 0,
+     "deferred": 20,
+     "abstained": 20,
+     "abstention_rate": 1.0,
+     "unsafe_action_blocks": 18,
+     "unsafe_action_rate": 0.9
+    },
+    {
+     "threshold": 1.0,
+     "incidents": 20,
+     "accepted_local": 0,
+     "coverage": 0.0,
+     "selective_error": null,
+     "selective_error_ci": null,
+     "unsafe_accepts": 0,
+     "deferred": 20,
+     "abstained": 20,
+     "abstention_rate": 1.0,
+     "unsafe_action_blocks": 18,
+     "unsafe_action_rate": 0.9
+    }
+   ],
+   "majority": [
+    {
+     "threshold": 0.0,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 18,
+     "unsafe_action_rate": 0.9
+    },
+    {
+     "threshold": 0.3333333333333333,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 18,
+     "unsafe_action_rate": 0.9
+    },
+    {
+     "threshold": 0.4,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 18,
+     "unsafe_action_rate": 0.9
+    },
+    {
+     "threshold": 0.6,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 18,
+     "unsafe_action_rate": 0.9
+    },
+    {
+     "threshold": 0.6666666666666666,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 18,
+     "unsafe_action_rate": 0.9
+    },
+    {
+     "threshold": 0.7,
+     "incidents": 20,
+     "accepted_local": 0,
+     "coverage": 0.0,
+     "selective_error": null,
+     "selective_error_ci": null,
+     "unsafe_accepts": 0,
+     "deferred": 20,
+     "abstained": 20,
+     "abstention_rate": 1.0,
+     "unsafe_action_blocks": 18,
+     "unsafe_action_rate": 0.9
+    },
+    {
+     "threshold": 0.8,
+     "incidents": 20,
+     "accepted_local": 0,
+     "coverage": 0.0,
+     "selective_error": null,
+     "selective_error_ci": null,
+     "unsafe_accepts": 0,
+     "deferred": 20,
+     "abstained": 20,
+     "abstention_rate": 1.0,
+     "unsafe_action_blocks": 18,
+     "unsafe_action_rate": 0.9
+    },
+    {
+     "threshold": 0.9,
+     "incidents": 20,
+     "accepted_local": 0,
+     "coverage": 0.0,
+     "selective_error": null,
+     "selective_error_ci": null,
+     "unsafe_accepts": 0,
+     "deferred": 20,
+     "abstained": 20,
+     "abstention_rate": 1.0,
+     "unsafe_action_blocks": 18,
+     "unsafe_action_rate": 0.9
+    },
+    {
+     "threshold": 1.0,
+     "incidents": 20,
+     "accepted_local": 0,
+     "coverage": 0.0,
+     "selective_error": null,
+     "selective_error_ci": null,
+     "unsafe_accepts": 0,
+     "deferred": 20,
+     "abstained": 20,
+     "abstention_rate": 1.0,
+     "unsafe_action_blocks": 18,
+     "unsafe_action_rate": 0.9
+    }
+   ]
+  },
+  "by_kind": {
+   "distractor": {
+    "n": 9,
+    "category_accuracy": 0.8888888888888888,
+    "route_accuracy": 0.0,
+    "local_rate": 0.0,
+    "abstention_rate": 1.0,
+    "unsafe_action_block_rate": 0.8888888888888888,
+    "rules_category_accuracy": 0.5555555555555556
+   },
+   "misleading": {
+    "n": 7,
+    "category_accuracy": 1.0,
+    "route_accuracy": 0.0,
+    "local_rate": 0.0,
+    "abstention_rate": 1.0,
+    "unsafe_action_block_rate": 0.8571428571428571,
+    "rules_category_accuracy": 1.0
+   },
+   "near_threshold": {
+    "n": 4,
+    "category_accuracy": 0.75,
+    "route_accuracy": 1.0,
+    "local_rate": 0.0,
+    "abstention_rate": 1.0,
+    "unsafe_action_block_rate": 1.0,
+    "rules_category_accuracy": 0.75
+   }
+  },
+  "timestamp": "2026-09-25T06:42:52+00:00"
+ },
+ {
+  "run": "gpu-full",
+  "file": "full-test_hard.json",
+  "dataset": "test_hard.jsonl",
+  "mode": "LOCAL_MODEL",
+  "model": "hf:Qwen/Qwen2.5-7B-Instruct",
+  "samples": 3,
+  "gate": "any",
+  "threshold": 1.0,
+  "switches_on": "strict_schema,compact_prompt,lenient_parse,retrieval=bm25,local_redaction=keep_network",
+  "cases": 20,
+  "category_accuracy": 0.85,
+  "category_ci": [
+   0.6396,
+   0.9476
+  ],
+  "rules_baseline": 0.75,
+  "route_accuracy": 0.25,
+  "action_accuracy": 0.6,
+  "local_rate": 0.05,
+  "abstention_rate": 0.95,
+  "unsafe_action_blocks": 0,
+  "selective_error": 0.0,
+  "unsafe_accepts": 0,
+  "p50_ms": 10261.805,
+  "p95_ms": 12266.35,
+  "workers": 4,
+  "prompt_tokens": 953,
+  "pii_leaked": 0,
+  "pii_planted": 0,
+  "egress_hybrid_b": 213.4,
+  "egress_cloud_only_b": 4370.2,
+  "cost_hybrid_1k": null,
+  "cost_cloud_only_1k": null,
+  "cost_measured": false,
+  "joules": 129.1,
+  "sweep": {
+   "any": [
+    {
+     "threshold": 0.0,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.3333333333333333,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.4,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.6,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.6666666666666666,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.7,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.8,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.9,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 1.0,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    }
+   ],
+   "majority": [
+    {
+     "threshold": 0.0,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.3333333333333333,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.4,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.6,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.6666666666666666,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.7,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.8,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 0.9,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    },
+    {
+     "threshold": 1.0,
+     "incidents": 20,
+     "accepted_local": 1,
+     "coverage": 0.05,
+     "selective_error": 0.0,
+     "selective_error_ci": [
+      0,
+      0.7935
+     ],
+     "unsafe_accepts": 0,
+     "deferred": 19,
+     "abstained": 19,
+     "abstention_rate": 0.95,
+     "unsafe_action_blocks": 0,
+     "unsafe_action_rate": 0.0
+    }
+   ]
+  },
+  "by_kind": {
+   "distractor": {
+    "n": 9,
+    "category_accuracy": 0.7777777777777778,
+    "route_accuracy": 0.0,
+    "local_rate": 0.0,
+    "abstention_rate": 1.0,
+    "unsafe_action_block_rate": 0.0,
+    "rules_category_accuracy": 0.5555555555555556
+   },
+   "misleading": {
+    "n": 7,
+    "category_accuracy": 1.0,
+    "route_accuracy": 0.14285714285714285,
+    "local_rate": 0.14285714285714285,
+    "abstention_rate": 0.8571428571428571,
+    "unsafe_action_block_rate": 0.0,
+    "rules_category_accuracy": 1.0
+   },
+   "near_threshold": {
+    "n": 4,
+    "category_accuracy": 0.75,
+    "route_accuracy": 1.0,
+    "local_rate": 0.0,
+    "abstention_rate": 1.0,
+    "unsafe_action_block_rate": 0.0,
+    "rules_category_accuracy": 0.75
+   }
+  },
+  "timestamp": "2026-09-25T06:45:16+00:00"
+ }
+]

@@ -1,0 +1,93 @@
+{
+  "mode": "LIVE_GPU_API",
+  "model": "hf:Qwen/Qwen2.5-7B-Instruct",
+  "health": {
+    "ok": true,
+    "service": "edgesupport",
+    "simulation": false,
+    "cloud_enabled": false,
+    "sample_count": 3,
+    "large_local_enabled": false,
+    "auth_enabled": false,
+    "uplink": {
+      "cloud_configured": false,
+      "reachable": false,
+      "forced_offline": true
+    },
+    "switches": {
+      "strict_schema": true,
+      "compact_prompt": true,
+      "gate_mode": "any",
+      "lenient_parse": true,
+      "retrieval": "bm25",
+      "local_redaction": "keep_network"
+    }
+  },
+  "streamlit_http_healthy": true,
+  "redaction_checked": true,
+  "latest_checked": true,
+  "cloud_disabled_checked": true,
+  "verification_checked": true,
+  "results": [
+    {
+      "category": "memory_pressure",
+      "route": {
+        "decision": "ESCALATE",
+        "reason_codes": [
+          "HIGH_RISK",
+          "MODEL_REQUESTED"
+        ],
+        "agreement_threshold": 0.8,
+        "gate_mode": "any",
+        "cloud_called": false,
+        "abstained": true,
+        "abstention": {
+          "active": true,
+          "mode": "human_review",
+          "reason_codes": [
+            "HIGH_RISK",
+            "MODEL_REQUESTED"
+          ],
+          "message": "No local action was authorized because a safety gate fired; human review is required."
+        }
+      },
+      "latency_ms": 6810.21,
+      "redactions": {
+        "EMAIL": 1,
+        "SECRET": 1,
+        "IPV4": 1
+      }
+    },
+    {
+      "category": "thermal_throttling",
+      "route": {
+        "decision": "ESCALATE",
+        "reason_codes": [
+          "HIGH_RISK",
+          "MODEL_REQUESTED",
+          "INSUFFICIENT_EVIDENCE"
+        ],
+        "agreement_threshold": 0.8,
+        "gate_mode": "any",
+        "cloud_called": false,
+        "abstained": true,
+        "abstention": {
+          "active": true,
+          "mode": "human_review",
+          "reason_codes": [
+            "HIGH_RISK",
+            "MODEL_REQUESTED",
+            "INSUFFICIENT_EVIDENCE"
+          ],
+          "message": "No local action was authorized because a safety gate fired; human review is required."
+        }
+      },
+      "latency_ms": 10380.95,
+      "redactions": {
+        "EMAIL": 1,
+        "SECRET": 1,
+        "IPV4": 1
+      }
+    }
+  ]
+}
