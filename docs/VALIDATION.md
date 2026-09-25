@@ -49,3 +49,22 @@ credentials through a private env file (works with `sudo docker`); `/health` upl
 and only when cloud is enabled. One deliberate default-path difference: when every sample is malformed, the risk
 phrase list now also matches "battery swelling" (it already did for valid samples), so such tickets go to a person
 without trying the second local tier. Suite after fixes: 79 passed, 4 skipped (FastAPI API tests).
+
+
+## Validation fixes — 2026-09-24
+
+Branch `fix-enhancement-validation`, based on `enhancements-v2` commit `9500760`.
+Local Python 3.12 suite: **98 passed, zero skipped**, using the installed real FastAPI
+TestClient (one dependency deprecation warning). `bash -n finetune/run_finetune.sh`
+and `git diff --check` pass.
+
+- Any high-risk action vote vetoes LOCAL in both routing modes.
+- Token-limit completions are invalid even when their JSON parses; usage remains recorded.
+- Threshold sweeps and calibration score the small-tier assessment being rerouted,
+  independently of the final larger-tier diagnosis.
+- Uploads require explicit `PUSH_TO_HF=true`; setting `HF_REPO_ID` alone keeps outputs local.
+- Added 15 regression cases. Upload tests use a fake Docker executable; no training or upload occurred.
+- Existing token accounting, dataset separation, privacy and offline API tests pass.
+
+These results supersede the earlier API skips for local automated validation only.
+Real Nano inference/performance, GPU training, cloud calls and Windows execution remain unvalidated.

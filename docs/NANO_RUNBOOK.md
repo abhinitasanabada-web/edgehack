@@ -82,7 +82,8 @@ Only once steps 1–4 are saved. Build the training data *after* step 4, because
 ```bash
 STAGE=data bash finetune/run_finetune.sh           # uses the .env switches; writes finetune/data/sft_meta.json
 # stop the zrt server (training needs the memory), then:
-export HF_TOKEN=... HF_REPO_ID=<you>/edgesupport-qwen7b-lora
+# Optional upload: omit this line to keep training outputs local.
+export PUSH_TO_HF=true HF_TOKEN=... HF_REPO_ID="YOUR_HF_USER/edgesupport-qwen7b-lora"
 STAGE=train bash finetune/run_finetune.sh          # preflight checks, LoRA, merge, push
 zrt pull $HF_REPO_ID && zrt serve $HF_REPO_ID --host 127.0.0.1 --port 8000   # set LOCAL_LLM_MODEL to the new id
 ONLY="full" SAMPLE_SWEEP=0 bash scripts/run_matrix.sh finetuned

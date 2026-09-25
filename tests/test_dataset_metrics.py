@@ -101,3 +101,15 @@ def test_threshold_grid_keeps_exact_fractions():
     from edge_support.router.escalation import route_assessment
     a={'base_reasons':[],'requested_count':3,'agreement':2/3}
     assert route_assessment(a,2/3)['decision']=='LOCAL' and route_assessment(a,round(2/3,4))['decision']=='ESCALATE'
+
+@pytest.mark.parametrize('small_correct,final_correct', [(False, True), (True, False)])
+def test_threshold_sweep_scores_small_tier_not_final_tier(small_correct, final_correct):
+    row = {'assessment': {'selected': {'issue_category': 'memory_pressure' if small_correct else 'cpu_saturation'},
+                          'base_reasons': [], 'requested_count': 5, 'agreement': .8},
+           'expected_category': 'memory_pressure', 'category_correct': final_correct,
+           'expected_decision': 'LOCAL', 'resolved_by': 'large'}
+    curve = sweep([row], [.8, 1])
+    assert curve[0]['selective_error'] == (0 if small_correct else 1)
+    assert curve[1]['accepted_local'] == 0
+    selected = choose({'any': curve}, 0)
+    assert selected['threshold'] == (.8 if small_correct else 1.01)

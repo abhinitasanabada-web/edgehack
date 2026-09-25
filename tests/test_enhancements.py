@@ -200,3 +200,26 @@ def test_large_tier_outage_reason_not_duplicated(diag):
                Settings(enable_large_local=True,large_llm_model='big'),Tiered([diag,diag,other]))
     base=r['tiers'][0]['assessment']['base_reasons']
     assert base.count('LARGE_MODEL_UNAVAILABLE')==1
+
+@pytest.mark.parametrize('action', ['restart_dns_client', 'clear_temp'])
+@pytest.mark.parametrize('mode', ['any', 'majority'])
+def test_minority_high_risk_action_always_vetoes(payload, diag, action, mode):
+    risky = diag.model_copy(update={'recommended_action': action})
+    a = assess([diag] * 4 + [risky], 5, payload, mode)
+    route = route_assessment(a, .8, mode)
+    assert route['decision'] == 'ESCALATE'
+    assert 'HIGH_RISK_ACTION' in route['reason_codes']
+
+@pytest.mark.parametrize('batched', [False, True])
+@pytest.mark.parametrize('lenient', [False, True])
+def test_complete_json_at_token_limit_is_invalid(monkeypatch, diag, batched, lenient):
+    def post(self, url, **kwargs):
+        return response({'choices': [{'message': {'content': diag.model_dump_json()},
+                                      'finish_reason': 'length'}],
+                         'usage': {'prompt_tokens': 100, 'completion_tokens': 50, 'total_tokens': 150}})
+    monkeypatch.setattr(httpx.Client, 'post', post)
+    client = LocalModelClient(Settings(local_llm_model='m', lenient_parse=lenient))
+    result = client.sample_many({}, n=1)[0] if batched else client.sample({})
+    diagnosis, stats = result
+    assert diagnosis is None and stats['valid'] is False and stats['truncated']
+    assert stats['total_tokens'] == 150

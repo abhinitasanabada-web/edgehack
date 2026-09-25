@@ -47,7 +47,9 @@ def sweep(rows,thresholds,gate_mode=None):
     for threshold in thresholds:
         valid=[r for r in rows if r.get('assessment')]
         accepted=[r for r in valid if route_assessment(r['assessment'],threshold,gate_mode)['decision']=='LOCAL']
-        wrong=sum(not r['category_correct'] for r in accepted)
+        # Score the same small-tier answer whose routing threshold is being swept.
+        wrong=sum((r['assessment'].get('selected') or {}).get('issue_category') != r['expected_category']
+                  for r in accepted)
         results.append({'threshold':threshold,'incidents':len(rows),'accepted_local':len(accepted),
             'coverage':len(accepted)/len(rows) if rows else None,
             'selective_error':wrong/len(accepted) if accepted else None,

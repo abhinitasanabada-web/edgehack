@@ -12,6 +12,13 @@ IMAGE=${NGC_IMAGE:-nvcr.io/nvidia/pytorch:25.12-py3}
 BASE_MODEL=${BASE_MODEL:-Qwen/Qwen2.5-7B-Instruct}
 EPOCHS=${EPOCHS:-2}
 DOCKER=${DOCKER:-docker}
+# A configured destination alone never authorizes uploading model weights.
+PUSH=""
+case "${PUSH_TO_HF:-false}" in
+  true) [[ -n ${HF_REPO_ID:-} ]] || { echo "PUSH_TO_HF=true requires HF_REPO_ID"; exit 1; }; PUSH="--push" ;;
+  false) ;;
+  *) echo "PUSH_TO_HF must be true or false"; exit 1 ;;
+esac
 
 if [[ $STAGE == data || $STAGE == all ]]; then
   [[ -f data/eval/train.jsonl ]] || .venv/bin/python scripts/make_dataset.py
@@ -30,7 +37,6 @@ if [[ $STAGE == train || $STAGE == all ]]; then
   avail_gb=$(awk '/MemAvailable/ {printf "%d", $2/1048576}' /proc/meminfo 2>/dev/null || echo 0)
   if (( avail_gb > 0 && avail_gb < 48 )); then echo "Only ${avail_gb} GB available; a 7B BF16 LoRA run wants ~48 GB+. Free memory first."; exit 1; fi
   [[ -f finetune/data/sft.jsonl ]] || { echo "Run STAGE=data first."; exit 1; }
-  PUSH=""; [[ -n ${HF_REPO_ID:-} ]] && PUSH="--push"
   # Pass HF credentials through a private env file: `sudo docker` resets the environment, and -e VALUE on the
   # command line would expose the token in the process list.
   ENVF=$(mktemp); chmod 600 "$ENVF"; trap 'rm -f "$ENVF"' EXIT
@@ -44,10 +50,10 @@ if [[ $STAGE == train || $STAGE == all ]]; then
       python finetune/train_lora.py --epochs $EPOCHS $PUSH;
       status=\$?; chown -R \$HOST_UID:\$HOST_GID finetune/outputs 2>/dev/null || true; exit \$status"
   echo "Merged model: finetune/outputs/merged   (training metrics: finetune/outputs/train_metrics.json)"
-  if [[ -n ${HF_REPO_ID:-} ]]; then
+  if [[ $PUSH == --push ]]; then
     echo "Serve it (documented ZRT path):  zrt pull $HF_REPO_ID && zrt serve $HF_REPO_ID --host 127.0.0.1 --port 8000"
   else
-    echo "No HF_REPO_ID set. Serving a local folder with zrt is unverified; set HF_REPO_ID and re-run with --push, or try:"
+    echo "Model kept local. Serving a local folder with zrt is unverified; explicitly set PUSH_TO_HF=true and HF_REPO_ID to upload, or try:"
     echo "  zrt serve $PWD/finetune/outputs/merged --host 127.0.0.1 --port 8000"
   fi
   echo "Then set LOCAL_LLM_MODEL in .env to the id from: curl -s 127.0.0.1:8000/v1/models"

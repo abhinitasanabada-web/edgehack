@@ -249,7 +249,7 @@ Goal: teach the 7B model *our* output contract (9 categories, the right action I
 # 1. Training data from the TRAIN split, same prompt as the app (add TEACHER=large to distil from a served second model)
 STAGE=data bash finetune/run_finetune.sh
 # 2. Free GPU memory (stop the zrt server), then LoRA-train + merge inside nvcr.io/nvidia/pytorch:25.12-py3
-export HF_TOKEN=... HF_REPO_ID=<you>/edgesupport-qwen7b-lora   # optional push
+export PUSH_TO_HF=true HF_TOKEN=... HF_REPO_ID="YOUR_HF_USER/edgesupport-qwen7b-lora"   # optional: explicitly authorize upload
 STAGE=train bash finetune/run_finetune.sh
 # 3. Serve the merged model and point .env at it
 zrt serve ${HF_REPO_ID:-$PWD/finetune/outputs/merged} --host 127.0.0.1 --port 8000

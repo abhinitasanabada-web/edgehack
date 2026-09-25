@@ -178,7 +178,7 @@ def test_adapter_usage_malformed_and_local_url(monkeypatch,diag):
 def test_sweep_coverage_error_no_fabricated_metrics(req,diag):
     payload,_=prepare(req,Settings())
     a=assess([diag]*3,3,payload)
-    rows=[{'assessment':a,'category_correct':True,'expected_decision':'LOCAL'},{'ok':False}]
+    rows=[{'assessment':a,'category_correct':True,'expected_category':diag.issue_category,'expected_decision':'LOCAL'},{'ok':False}]
     curve=sweep(rows,[.5,1])
     assert all(r['coverage']==.5 and r['deferred']==1 for r in curve)
 

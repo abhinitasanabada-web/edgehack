@@ -33,8 +33,8 @@ def _supported(d, known, relevant, measured):
 def assess(samples, requested_count, payload, gate_mode="any"):
     """Reasons are computed for BOTH gate modes (reasons_by_mode) so one model run can be swept either way.
     any      (original): a single hedging, weak-evidence, high-risk-action or malformed sample vetoes LOCAL.
-    majority           : those uncertainty signals must come from at least half the valid samples; malformed
-                         samples only lower agreement (they already count against it). Risk gates stay strict."""
+    majority           : hedging/insufficient-evidence flags require at least half the valid samples; malformed
+                         samples only lower agreement (they already count against it). Any high-risk action or severity vetoes LOCAL."""
     valid = [d for d in samples if d is not None]
     votes_detail = [None if d is None else {"category":d.issue_category,"action":d.recommended_action,
                     "severity":d.severity,"escalate":d.escalate,"insufficient_evidence":d.insufficient_evidence,
@@ -75,7 +75,7 @@ def assess(samples, requested_count, payload, gate_mode="any"):
     if any(d.insufficient_evidence for d in valid) or not _supported(first, known, relevant, measured):
         any_mode.append("INSUFFICIENT_EVIDENCE")
     if len(valid)!=requested_count: any_mode.append("INVALID_MODEL_OUTPUT")
-    majority = hard + (["HIGH_RISK_ACTION"] if risky(best) or half(risky) else []) + shared
+    majority = hard + (["HIGH_RISK_ACTION"] if any(risky(d) for d in valid) else []) + shared
     if half(lambda d: d.escalate) or winner[1]=="no_action_escalate": majority.append("MODEL_REQUESTED")
     if half(lambda d: d.insufficient_evidence) or not _supported(best, known, relevant, measured):
         majority.append("INSUFFICIENT_EVIDENCE")

@@ -124,6 +124,8 @@ class LocalModelClient:
             choice = data["choices"][0]
             stats["finish_reason"] = choice.get("finish_reason") if isinstance(choice, dict) else None
             stats["truncated"] = stats["finish_reason"] == "length"
+            if stats["truncated"]:
+                return None, {**stats, "valid":False}
             diagnosis = parse(choice["message"]["content"], s.lenient_parse)
         except (ValueError, KeyError, IndexError, TypeError, AttributeError):
             return None, {**stats,"valid":False}
@@ -169,6 +171,9 @@ class LocalModelClient:
         for choice in (data.get("choices") or [])[:n]:
             finish = choice.get("finish_reason") if isinstance(choice, dict) else None
             meta = {**stats, "finish_reason":finish, "truncated":finish == "length"}
+            if meta["truncated"]:
+                results.append((None, {**meta, "valid":False}))
+                continue
             try:
                 results.append((parse(choice["message"]["content"], s.lenient_parse), {**meta, "valid":True}))
             except (ValueError, KeyError, TypeError, AttributeError):
