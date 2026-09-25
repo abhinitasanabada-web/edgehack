@@ -2,7 +2,7 @@
 
 Combines the original privacy/telemetry pipeline with the teammate's FastAPI backend, endpoint collectors, action IDs and verification. The Nano performs primary inference; cloud is optional and requires a recorded escalation plus explicit approval. Endpoint changes remain separately confirmed on Windows.
 
-**Current status:** code tested locally in simulation and with mocked model responses (v2: 79 tests pass locally; the 4 API tests need FastAPI and run on the Nano). The team previously confirmed Qwen2.5-7B-Instruct was Ready on its Nano, but this integrated version has not yet been validated against that server. No larger local model, cloud benchmark, production dataset or fine-tuning result is claimed.
+**Current status:** the fix branch records 98 passing tests in its validation log; this abstention change adds four regression tests that must be rerun in the target environment. The team previously confirmed Qwen2.5-7B-Instruct was Ready on its Nano, but this integrated version has not yet been validated against that server. No larger local model, cloud benchmark, production dataset or fine-tuning result is claimed.
 
 
 ## At a glance
@@ -27,6 +27,10 @@ when the evidence doesn't support answering locally.
    agrees, and the fix is known and low-risk.
 4. τ and the gate mode are chosen on `data/eval/calib.jsonl` and locked before `test.jsonl` and `test_hard.jsonl`
    are scored.
+
+When any uncertainty or safety gate fires, the router exposes an explicit system-level abstention in
+`route.abstained` and `route.abstention`, blocks the action plan, and records the reason codes. Cloud remains a
+separate, human-approved second-opinion path; it never authorizes an endpoint action.
 
 ### Results
 
@@ -225,7 +229,7 @@ Set `ENABLE_CLOUD=true`, `CLOUD_LLM_BASE_URL` (HTTPS), `CLOUD_LLM_MODEL`, and `C
 .venv/bin/python eval/evaluate.py --samples 5 --output reports/nano-5.json
 ```
 
-Each run writes JSON plus a threshold-sweep CSV. The sweep reports local acceptance coverage, category error among accepted cases, and unsafe accepts relative to labels. It measures small-tier deferral only: it does not invent large-tier, cloud cost or energy outcomes. One sample is a conservative always-defer baseline. Use an independently labeled calibration split to select a threshold, then lock it before evaluating a held-out test split (`--dataset PATH`). The bundled 13 synthetic cases are not adequate for production calibration; no measured cutoff is claimed. Optional `--warmup` excludes one warmup request from reported case measurements.
+Each run writes JSON plus a threshold-sweep CSV. The sweep reports local acceptance coverage, category error among accepted cases, abstention rate, blocked unsafe-action rate, and unsafe accepts relative to labels. It measures small-tier deferral only: it does not invent large-tier, cloud cost or energy outcomes. One sample is a conservative always-defer baseline. Use an independently labeled calibration split to select a threshold, then lock it before evaluating a held-out test split (`--dataset PATH`). The bundled 13 synthetic cases are not adequate for production calibration; no measured cutoff is claimed. Optional `--warmup` excludes one warmup request from reported case measurements.
 
 Per-request `prompt_tokens`, `completion_tokens`, `total_tokens`, model/tier and round-trip latency come from actual responses. Missing usage is null; malformed JSON responses still retain available token usage. Requests interrupted by transport errors may have unknown usage. No energy/cost is estimated from tokens. See [design assessment](docs/DESIGN_ASSESSMENT.md) for a fair comparison plan and [legacy token comparison instructions](docs/LEGACY_README.md) for a separately approved cloud baseline. That legacy example uses the older prompt, so do not compare its numbers directly against the integrated prompt as if workloads were identical.
 

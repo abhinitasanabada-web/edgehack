@@ -7,6 +7,7 @@ from edge_support.inference.output_schema import CATEGORIES
 from app.services.telemetry import CATEGORIES as METRIC_CATEGORIES
 
 HARD_REASONS = {"HIGH_RISK", "USER_REQUESTED", "TROUBLESHOOTING_FAILED", "HIGH_RISK_ACTION"}
+UNSAFE_ACTION_REASONS = {"HIGH_RISK_ACTION", "UNKNOWN_ACTION", "ACTION_CATEGORY_MISMATCH"}
 
 def redact(value):
     return sanitize(value)[0]
@@ -94,9 +95,31 @@ def route_assessment(assessment, threshold, gate_mode=None):
     if assessment["requested_count"] < 2:
         reasons.append("INSUFFICIENT_SAMPLES")
     if assessment["agreement"] < threshold: reasons.append("LOW_AGREEMENT")
-    return {"decision":"ESCALATE" if reasons else "LOCAL", "reason_codes":list(dict.fromkeys(reasons)),
-            "agreement_threshold":threshold,"gate_mode":gate_mode or assessment.get("gate_mode","any"),"cloud_called":False}
+    reasons = list(dict.fromkeys(reasons))
+    abstained = bool(reasons)
+    if not abstained:
+        abstention = {"active":False, "mode":"none", "reason_codes":[], "message":""}
+    elif UNSAFE_ACTION_REASONS.intersection(reasons) or "HIGH_RISK" in reasons:
+        abstention = {
+            "active":True,
+            "mode":"human_review",
+            "reason_codes":reasons,
+            "message":"No local action was authorized because a safety gate fired; human review is required.",
+        }
+    else:
+        abstention = {
+            "active":True,
+            "mode":"uncertainty",
+            "reason_codes":reasons,
+            "message":"No local action was authorized because the system did not have enough trustworthy evidence.",
+        }
+    return {"decision":"ESCALATE" if abstained else "LOCAL", "reason_codes":reasons,
+            "agreement_threshold":threshold,"gate_mode":gate_mode or assessment.get("gate_mode","any"),
+            "cloud_called":False,"abstained":abstained,"abstention":abstention}
 
 def decide_route(diagnosis, cloud_enabled=False):
     """Compatibility entry point refuses authorization without measured evidence."""
-    return {"decision":"ESCALATE","reason_codes":["MISSING_ROUTING_EVIDENCE"],"cloud_called":False}
+    reasons = ["MISSING_ROUTING_EVIDENCE"]
+    return {"decision":"ESCALATE","reason_codes":reasons,"cloud_called":False,"abstained":True,
+            "abstention":{"active":True,"mode":"uncertainty","reason_codes":reasons,
+                           "message":"No local action was authorized because routing evidence was missing."}}

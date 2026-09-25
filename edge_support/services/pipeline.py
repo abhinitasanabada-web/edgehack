@@ -6,7 +6,7 @@ from app.services.retrieval import retrieve as retrieve_legacy, INDEX
 from edge_support.rag.retriever import retrieve, retrieve_bm25
 from edge_support.inference.output_schema import Diagnosis
 from edge_support.inference.model_client import LocalModelClient, ModelError
-from edge_support.router.escalation import assess, route_assessment, HARD_REASONS
+from edge_support.router.escalation import assess, route_assessment, HARD_REASONS, UNSAFE_ACTION_REASONS
 from edge_support.actions.registry import get_action
 
 class SimulationClient:
@@ -85,6 +85,18 @@ def diagnose(request,settings,client=None):
             confidence=0,severity="medium",recommended_action="no_action_escalate",escalate=True,
             insufficient_evidence=True).model_dump()
     action=get_action(selected["recommended_action"])
+    unsafe_action = bool(
+        action is None
+        or (action and action.high_risk)
+        or UNSAFE_ACTION_REASONS.intersection(route["reason_codes"])
+    )
+    action_allowed = bool(route["decision"]=="LOCAL" and action and not action.high_risk and not settings.simulation_mode)
+    action_block_reasons = list(route["reason_codes"])
+    if settings.simulation_mode and not action_allowed:
+        action_block_reasons.append("SIMULATION_MODE")
+    if not action_allowed and not action_block_reasons:
+        action_block_reasons.append("ACTION_NOT_AUTHORIZED")
+    action_block_reasons = list(dict.fromkeys(action_block_reasons))
     # Egress boundary: everything returned, stored (/latest) or ticketed is fully redacted, whatever the
     # local-redaction mode was.
     clean_result,extra=sanitize({"diagnosis":selected,"payload":payload,"tiers":tiers})
@@ -94,7 +106,10 @@ def diagnose(request,settings,client=None):
             "metrics":{"latency_ms":timings["total_ms"],"requests":stats,"timings":timings,
                        "agreement":assessment["agreement"],"evidence_supported":assessment["evidence_supported"],
                        "telemetry_consistent":assessment["telemetry_consistent"],
-                       "truncated_samples":sum(1 for m in stats if m.get("truncated"))},
+                       "truncated_samples":sum(1 for m in stats if m.get("truncated")),
+                       "abstained":bool(route.get("abstained")),
+                       "unsafe_action_proposed":unsafe_action,
+                       "unsafe_action_blocked":bool(unsafe_action and not action_allowed)},
             "processing_location":"SIMULATION" if settings.simulation_mode else "LOCAL",
             "simulation":settings.simulation_mode,"cloud_sent":False,
             "cloud_status":("Uplink down: answered on site; the redacted ticket is kept for human support." if settings.force_offline
@@ -103,8 +118,11 @@ def diagnose(request,settings,client=None):
             "switches":{k:getattr(settings,k) for k in ("strict_schema","compact_prompt","gate_mode","lenient_parse","retrieval","local_redaction")},
             "redactions":counts,"knowledge":clean_result["payload"]["knowledge"],"signals":clean_result["payload"]["signals"],
             "action_plan":{"action_id":clean_result["diagnosis"]["recommended_action"],
-                           "allowed":bool(route["decision"]=="LOCAL" and action and not action.high_risk and not settings.simulation_mode),
+                           "allowed":action_allowed,
+                           "status":"AUTHORIZED_PENDING_CONFIRMATION" if action_allowed else "BLOCKED_BY_POLICY",
+                           "block_reasons":action_block_reasons,
                            "requires_confirmation":True},
+            "abstention":route["abstention"],
             "ticket":{**clean_result,"route":route}}
 
 def cloud_payload(result):

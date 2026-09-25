@@ -28,7 +28,7 @@ from edge_support.config import Settings, ROOT
 from edge_support.inference.output_schema import IncidentRequest
 from edge_support.inference.model_client import LocalModelClient, ModelError, messages
 from edge_support.services.pipeline import diagnose, cloud_second_opinion, cloud_payload
-from edge_support.router.escalation import route_assessment, HARD_REASONS
+from edge_support.router.escalation import route_assessment, HARD_REASONS, UNSAFE_ACTION_REASONS
 
 BASE_THRESHOLDS = [0,.4,.6,.7,.8,.9,1]
 CHARS_PER_TOKEN = 3.6            # fallback only; normally tokens/char is measured from the local prompts
@@ -46,16 +46,22 @@ def sweep(rows,thresholds,gate_mode=None):
     results=[]
     for threshold in thresholds:
         valid=[r for r in rows if r.get('assessment')]
-        accepted=[r for r in valid if route_assessment(r['assessment'],threshold,gate_mode)['decision']=='LOCAL']
+        routed=[(r,route_assessment(r['assessment'],threshold,gate_mode)) for r in valid]
+        accepted=[r for r,route in routed if route['decision']=='LOCAL']
         # Score the same small-tier answer whose routing threshold is being swept.
         wrong=sum((r['assessment'].get('selected') or {}).get('issue_category') != r['expected_category']
                   for r in accepted)
+        abstained=len(rows)-len(accepted)
+        unsafe_blocks=sum(bool(UNSAFE_ACTION_REASONS.intersection(route['reason_codes'])) for _,route in routed)
         results.append({'threshold':threshold,'incidents':len(rows),'accepted_local':len(accepted),
             'coverage':len(accepted)/len(rows) if rows else None,
             'selective_error':wrong/len(accepted) if accepted else None,
             'selective_error_ci':wilson(wrong,len(accepted)),
             'unsafe_accepts':sum(r['expected_decision']=='ESCALATE' for r in accepted),
-            'deferred':len(rows)-len(accepted)})
+            'deferred':abstained,'abstained':abstained,
+            'abstention_rate':abstained/len(rows) if rows else None,
+            'unsafe_action_blocks':unsafe_blocks,
+            'unsafe_action_rate':unsafe_blocks/len(rows) if rows else None})
     return results
 
 def choose(sweeps,target_error):
@@ -136,6 +142,7 @@ def run_case(case,settings):
     except (ModelError,ValueError):
         return {'id':case['id'],'ok':False,'kind':case.get('kind'),'expected_category':case['expected_category'],
                 'expected_decision':case['expected_decision'],'error':'Local inference or input failed',
+                'abstained':True,'unsafe_action_blocked':False,
                 'rules_category_correct':rules_category(case,settings)==case['expected_category']}
     a=r['tiers'][0]['assessment']
     reqs=r['metrics']['requests']
@@ -153,6 +160,8 @@ def run_case(case,settings):
         'route_correct':r['route']['decision']==case['expected_decision'],
         'action_correct':r['diagnosis']['recommended_action']==case['expected_action'] if 'expected_action' in case else None,
         'resolved_by':r['tiers'][-1]['tier'],'assessment':a,'route':r['route'],'metrics':r['metrics'],
+        'abstained':bool(r['route'].get('abstained')),
+        'unsafe_action_blocked':bool(r['metrics'].get('unsafe_action_blocked')),
         'cloud_bound':r['route']['decision']=='ESCALATE' and not hard,'human_handoff':hard,
         'local_prompt_chars':chars(local_msgs),'cloud_only_chars':chars(only_msgs),'hybrid_chars':chars(hyb_msgs),
         'cloud_only_bytes':len(json.dumps(only_msgs)),'hybrid_bytes':len(json.dumps(hyb_msgs)),
@@ -172,6 +181,8 @@ def by_kind(rows):
     for r in rows: groups[r.get('kind') or 'unlabeled'].append(r)
     return {k:{'n':len(v),'category_accuracy':rate(v,'category_correct'),'route_accuracy':rate(v,'route_correct'),
                'local_rate':sum(r.get('route',{}).get('decision')=='LOCAL' for r in v)/len(v),
+               'abstention_rate':rate(v,'abstained'),
+               'unsafe_action_block_rate':rate(v,'unsafe_action_blocked'),
                'rules_category_accuracy':rate(v,'rules_category_correct')} for k,v in sorted(groups.items())}
 
 def cost(tokens_in,tokens_out,s):
@@ -288,6 +299,10 @@ def main():
         'route_accuracy':sum(r.get('route_correct',False) for r in rows)/n,
         'action_accuracy':(sum(bool(r.get('action_correct')) for r in rows)/n) if any(r.get('action_correct') is not None for r in rows) else None,
         'local_rate':sum(r.get('route',{}).get('decision')=='LOCAL' for r in good)/n,
+        'abstentions':sum(bool(r.get('abstained')) for r in rows),
+        'abstention_rate':sum(bool(r.get('abstained')) for r in rows)/n,
+        'unsafe_action_blocks':sum(bool(r.get('unsafe_action_blocked')) for r in rows),
+        'unsafe_action_rate':sum(bool(r.get('unsafe_action_blocked')) for r in rows)/n,
         'resolved_by_large':sum(r.get('resolved_by')=='large' and r['route']['decision']=='LOCAL' for r in good),
         'p50_ms':statistics.median(latency) if latency else None,'p95_ms':quantile(latency,.95),
         'rules_baseline':{'category_accuracy':rate(rows,'rules_category_correct'),'note':'telemetry thresholds + keywords, no model'},
