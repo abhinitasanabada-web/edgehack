@@ -90,11 +90,12 @@ live_status()
 result=st.session_state.get('result')
 if result:
     d=result['diagnosis'];m=result['metrics']
-    a,b,c,e=st.columns(4)
+    a,b,c,e,f=st.columns(5)
     a.metric("Processing",result['processing_location'])
     b.metric("Sample agreement",f"{m['agreement']:.0%}")
     c.metric("Total latency",f"{m['latency_ms']:,.0f} ms")
     e.metric("Decision",result['route']['decision'])
+    f.metric("System abstained", "YES" if result['route'].get('abstained') else "NO")
     st.caption(f"Model self-report: {d['confidence']:.0%} (not routing probability). Agreement is uncalibrated; samples can share errors.")
     codes=result['route']['reason_codes'];tier0=(result.get('tiers') or [{}])[0].get('assessment') or {}
     with st.container(border=True):
@@ -104,7 +105,10 @@ if result:
                (f"Model asked {n} times: {round(agree*n)} of {n} agree (needs {result['route'].get('agreement_threshold',0):.0%})", "LOW_AGREEMENT" not in codes),
                ("Safety gates (risk, specialist request, failed fix)", not HARD.intersection(codes))]
         for text,ok in steps: st.markdown(("✅ " if ok else "⚠️ ")+text)
-        if result['route']['decision']=='LOCAL': st.success("Kept on site: answered by the local model on the Nano.")
+        if result['route'].get('abstained'):
+            st.error("SYSTEM ABSTAINED: no local action was authorized.")
+            st.caption(result['route'].get('abstention',{}).get('message','The policy requires review.'))
+        elif result['route']['decision']=='LOCAL': st.success("Kept on site: answered by the local model on the Nano.")
         elif HARD.intersection(codes): st.error("Sent to a person (IT support): policy requires human review.")
         else: st.warning("Needs a second opinion: a redacted ticket can go to the cloud with your approval, or to IT support.")
         for code in codes: st.markdown(f"- {REASONS.get(code,code)}")
@@ -116,6 +120,8 @@ if result:
 
     for step in d['recommended_steps']: st.write('• '+step)
     st.write('Severity: '+d['severity']+' · Proposed action: '+d['recommended_action'])
+    if not result['action_plan']['allowed']:
+        st.warning("Action status: BLOCKED_BY_POLICY · " + ", ".join(result['action_plan'].get('block_reasons', [])))
 
     for item in d['evidence']: st.write('• '+item)
     st.info('Reasons: '+(', '.join(result['route']['reason_codes']) or 'Agreement and evidence gates passed'))
