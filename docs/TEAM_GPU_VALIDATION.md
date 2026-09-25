@@ -71,3 +71,8 @@ Nano loopback port 8000. The launcher does not start or stop the model server.
 To reproduce the broader comparison, use `MODE=quick bash scripts/run_matrix.sh quick` (30 cases per split),
 or `bash scripts/run_matrix.sh base` for the full datasets. These are larger than this bounded validation.
 Keep calibration/test splits separate and do not select a new threshold based on test results.
+
+
+## Follow-up: GPU training smoke tests (2026-09-25)
+
+After the integration checks above, two bounded GPU LoRA tests passed training, evaluation, merging and saving. The original model was restored and answered a real inference request afterward. This supersedes the earlier “no GPU training” status only for those short tests; full training and quality improvement remain unvalidated. See the [manual guide](../finetune/README.md) and [measured memory report](../reports/training-oom-probe/summary.md).

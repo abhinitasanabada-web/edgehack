@@ -77,20 +77,18 @@ LOCAL_SAMPLE_COUNT=3
 
 ## 5. Optional: fine-tune, then the same matrix (1–2 h)
 
-Only once steps 1–4 are saved. Build the training data *after* step 4, because the switches change the prompt.
+Only once steps 1–4 are saved. Build the training data after choosing the prompt switches.
+
+Use **[the manual training guide](../finetune/README.md)** for the tested native CUDA route, the bounded GPU memory test, automatic restoration of inference and common fixes. Two short LoRA runs passed; full training and fine-tuned serving remain unvalidated. The Docker wrapper is an alternative requiring Docker access, not the path used for those measurements.
+
+After separately serving and checking a fine-tuned model, recalibrate and run the same comparison:
 
 ```bash
-STAGE=data bash finetune/run_finetune.sh           # uses the .env switches; writes finetune/data/sft_meta.json
-# stop the zrt server (training needs the memory), then:
-# Optional upload: omit this line to keep training outputs local.
-export PUSH_TO_HF=true HF_TOKEN=... HF_REPO_ID="YOUR_HF_USER/edgesupport-qwen7b-lora"
-STAGE=train bash finetune/run_finetune.sh          # preflight checks, LoRA, merge, push
-zrt pull $HF_REPO_ID && zrt serve $HF_REPO_ID --host 127.0.0.1 --port 8000   # set LOCAL_LLM_MODEL to the new id
 ONLY="full" SAMPLE_SWEEP=0 bash scripts/run_matrix.sh finetuned
 .venv/bin/python scripts/compare_runs.py reports/base/full-n3-test.json reports/finetuned/full-n3-test.json
 ```
 
-Keep whichever model wins. If fine-tuning doesn't beat the switches alone, say so. That's a finding too.
+Keep whichever model wins. Do not claim improvement from training loss alone.
 
 ## 6. Publish the evidence (10 min)
 

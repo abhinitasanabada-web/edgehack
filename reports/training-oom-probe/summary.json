@@ -1,0 +1,62 @@
+{
+  "code_revision": "eead6e8",
+  "gpu": "NVIDIA GB10",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "environment": "isolated native CUDA environment; Docker was not used",
+  "tests": [
+    {
+      "label": "conservative",
+      "status": "passed",
+      "settings": {
+        "per_device_train_batch_size": 1,
+        "per_device_eval_batch_size": 1,
+        "gradient_accumulation_steps": 1,
+        "max_length": 3072,
+        "max_steps": 2,
+        "gradient_checkpointing": true,
+        "bf16": true
+      },
+      "tokenized_train_lengths": {
+        "min": 408,
+        "max": 1233,
+        "examples": 367
+      },
+      "peak_allocated_gib": 15.611,
+      "peak_reserved_gib": 16.361,
+      "elapsed_s": 247.96
+    },
+    {
+      "label": "current-defaults",
+      "status": "passed",
+      "settings": {
+        "per_device_train_batch_size": 4,
+        "per_device_eval_batch_size": 8,
+        "gradient_accumulation_steps": 4,
+        "max_length": 3072,
+        "max_steps": 2,
+        "gradient_checkpointing": true,
+        "bf16": true
+      },
+      "tokenized_train_lengths": {
+        "min": 408,
+        "max": 1233,
+        "examples": 367
+      },
+      "peak_allocated_gib": 17.972,
+      "peak_reserved_gib": 20.484,
+      "elapsed_s": 307.79
+    }
+  ],
+  "sampled_system_peak_used_gib": 45.074,
+  "sampled_system_min_available_gib": 76.551,
+  "limits": [
+    "Two optimizer steps per test, not full training",
+    "Longest tokenized training example 1233; full 3072-token contexts not exercised",
+    "Whole-system memory includes CPU allocations, OS and other processes",
+    "PyTorch allocator peaks exclude non-PyTorch allocations",
+    "Inference was stopped during training; concurrent serving was not tested",
+    "Original base model served after testing; smoke-test weights not deployed or uploaded"
+  ],
+  "inference_restored": true,
+  "restoration_check": "Original Qwen model on port 8000 returned OK to a real chat completion."
+}

@@ -2,7 +2,7 @@
 
 Combines the original privacy/telemetry pipeline with the teammate's FastAPI backend, endpoint collectors, action IDs and verification. The Nano performs primary inference; cloud is optional and requires a recorded escalation plus explicit approval. Endpoint changes remain separately confirmed on Windows.
 
-**Current status:** all teammate branches are integrated. **107 tests pass on macOS and the GB10 Nano**, and the launcher/API/dashboard have passed a live Qwen2.5-7B check. A bounded GPU comparison completed 100 synthetic calibration/test cases. Enhanced settings were faster but less accurate overall on these small subsets; local acceptance remains conservative. See [the validation record](docs/TEAM_GPU_VALIDATION.md). Large-model serving, real cloud comparison, Windows execution and GPU fine-tuning remain unvalidated.
+**Current status:** all teammate branches are integrated. **107 tests pass on macOS and the GB10 Nano**, and the launcher/API/dashboard have passed a live Qwen2.5-7B check. A bounded GPU comparison completed 100 synthetic calibration/test cases. Enhanced settings were faster but less accurate overall on these small subsets; local acceptance remains conservative. See [the validation record](docs/TEAM_GPU_VALIDATION.md). Two bounded GPU LoRA tests also passed; see the [manual training guide](finetune/README.md). Full training, large-model serving, real cloud comparison and Windows execution remain unvalidated.
 
 
 ## At a glance
@@ -245,8 +245,8 @@ For a workload comparison, measure all cloud-only requests versus actual approve
 
 ## Models, datasets and fine-tuning
 
-- Local deployment observed by the team: Qwen2.5-7B-Instruct via ZRT. Integrated real inference still needs validation.
-- Training/fine-tuning: pipeline added (see below); no fine-tuned result measured yet. Larger local and cloud models: not yet measured.
+- Local deployment: Qwen2.5-7B-Instruct via ZRT, exercised in the integrated GB10 GPU validation.
+- Training/fine-tuning: two short GPU LoRA training/evaluation/merge/save tests passed without OOM. No full-training or quality-improvement result is claimed. Larger local and cloud models remain unmeasured.
 - Original corpus: 9 sample documents; teammate corpus: 12 sample runbooks. Retrieval combines lexical hits from both, not a learned semantic reranker. Their scores use different scales.
 - Evaluation: 13 original synthetic incidents; 3 teammate examples retained in `eval/incidents.jsonl`. No external public dataset has been used.
 - Evaluation split: `scripts/make_dataset.py` generates 387 train / 151 test synthetic tickets with template-disjoint wording (train is only for fine-tuning; test only for scoring).
@@ -255,22 +255,11 @@ For a workload comparison, measure all cloud-only requests versus actual approve
 
 Goal: teach the 7B model *our* output contract (9 categories, the right action ID per category, exact `signal:`/`kb:` evidence IDs) so its samples agree and pass the evidence gate more often. It does not add IT knowledge. Keep the stock model if the before/after numbers do not improve.
 
-```bash
-# 0. Baseline with the stock model (test split never used for training)
-.venv/bin/python eval/evaluate.py --dataset data/eval/test.jsonl --samples 3 --output reports/base.json
-# 1. Training data from the TRAIN split, same prompt as the app (add TEACHER=large to distil from a served second model)
-STAGE=data bash finetune/run_finetune.sh
-# 2. Free GPU memory (stop the zrt server), then LoRA-train + merge inside nvcr.io/nvidia/pytorch:25.12-py3
-export PUSH_TO_HF=true HF_TOKEN=... HF_REPO_ID="YOUR_HF_USER/edgesupport-qwen7b-lora"   # optional: explicitly authorize upload
-STAGE=train bash finetune/run_finetune.sh
-# 3. Serve the merged model and point .env at it
-zrt serve ${HF_REPO_ID:-$PWD/finetune/outputs/merged} --host 127.0.0.1 --port 8000
-curl -s 127.0.0.1:8000/v1/models        # set LOCAL_LLM_MODEL to this id
-# 4. Same test, fine-tuned model
-.venv/bin/python eval/evaluate.py --dataset data/eval/test.jsonl --samples 3 --output reports/finetuned.json
-```
+Follow **[finetune/README.md — manual GPU training, memory checks and common fixes](finetune/README.md)**. It covers the prepared Nano environment, training-data generation, a two-step test with automatic inference restart, memory monitoring, output files and how to approach a later full run.
 
-Compare `category_accuracy`, `action_accuracy`, `local_rate`, `route_accuracy`, unsafe accepts in the sweep, and p50/p95 latency. `finetune/outputs/train_metrics.json` records training loss, time and peak memory. Samples are now sent in one batched request (`BATCH_SAMPLES=true`, vLLM `n` + JSON schema); set `false` to restore sequential requests. Training library versions in `run_finetune.sh` were only smoke-tested on CPU with a tiny model; the GB10 run is unverified.
+The measured current-default test (training batch 4, evaluation batch 8) peaked at **17.97 GiB allocated / 20.48 GiB reserved by PyTorch**, with **45.07 GiB sampled whole-system usage**. Both tested configurations completed without OOM. These are bounded tests on examples up to 1,233 tokens, not a guarantee for full 3,072-token inputs or full-epoch training. See [the training measurements](reports/training-oom-probe/summary.md).
+
+The tested path uses an isolated native CUDA environment; the Docker training wrapper remains unvalidated on this Nano. Neither test uploaded weights or replaced the served base model. Keep model weights, tokens and `.env` out of Git.
 
 ## Docker
 

@@ -73,3 +73,8 @@ Real Nano inference/performance, GPU training, cloud calls and Windows execution
 ## Combined branch and live GPU validation
 
 The newer [team GPU validation record](TEAM_GPU_VALIDATION.md) supersedes the earlier “Nano not tested” status: 107 tests pass on both hosts, and real Qwen inference plus the integrated launcher/API/dashboard were exercised. See that record for the bounded benchmark, code revisions, results and remaining limits.
+
+
+## GPU training smoke tests — 2026-09-25
+
+Two real GB10 LoRA runs (two optimizer steps each, with evaluation, merge and save) passed without OOM. See [the memory report](../reports/training-oom-probe/summary.md) and [manual procedure](../finetune/README.md). The original inference service was restored and tested. Full-epoch training, maximum-length inputs, Docker training and fine-tuned model quality remain unvalidated.

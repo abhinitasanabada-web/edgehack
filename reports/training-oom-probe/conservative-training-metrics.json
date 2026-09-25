@@ -1,0 +1,31 @@
+{
+  "base_model": "/opt/hp/zrt/models/hf/Qwen/Qwen2.5-7B-Instruct/main",
+  "examples": 367,
+  "train_seconds": 10.3,
+  "train_loss": 2.3016605377197266,
+  "eval": {
+    "eval_loss": 1.778890609741211,
+    "eval_runtime": 7.0085,
+    "eval_samples_per_second": 2.854,
+    "eval_steps_per_second": 2.854,
+    "eval_entropy": 0.6980756133794784,
+    "eval_num_tokens": 1956.0,
+    "eval_mean_token_accuracy": 0.6431165799498558,
+    "epoch": 0.005449591280653951
+  },
+  "peak_gpu_memory_gb": 16.76,
+  "sft_meta": {
+    "examples": 387,
+    "split": "train.jsonl",
+    "teacher": null,
+    "switches": {
+      "strict_schema": true,
+      "compact_prompt": true,
+      "retrieval": "bm25",
+      "local_redaction": "keep_network",
+      "batch_samples": true
+    },
+    "system_prompt_sha256": "5741c2d72978319a3d3094a814321f4489dda390d2aa95e74f7331e18d4aff90",
+    "created": "2026-09-25T06:59:34+00:00"
+  }
+}

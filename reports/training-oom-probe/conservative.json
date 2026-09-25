@@ -1,0 +1,124 @@
+{
+  "label": "conservative",
+  "torch": "2.11.0+cu130",
+  "cuda": true,
+  "events": [
+    {
+      "stage": "before_model_load",
+      "elapsed_s": 0.61,
+      "allocated_gib": 0.0,
+      "reserved_gib": 0.0,
+      "peak_allocated_gib": 0.0,
+      "peak_reserved_gib": 0.0,
+      "system_available_gib": 114.844
+    },
+    {
+      "stage": "trainer_ready",
+      "elapsed_s": 107.91,
+      "allocated_gib": 14.398,
+      "reserved_gib": 14.408,
+      "peak_allocated_gib": 14.398,
+      "peak_reserved_gib": 14.408,
+      "system_available_gib": 98.051
+    },
+    {
+      "stage": "train_start",
+      "elapsed_s": 107.91,
+      "allocated_gib": 14.398,
+      "reserved_gib": 14.408,
+      "peak_allocated_gib": 14.398,
+      "peak_reserved_gib": 14.408,
+      "system_available_gib": 98.051
+    },
+    {
+      "stage": "optimizer_step_1",
+      "elapsed_s": 109.83,
+      "allocated_gib": 14.724,
+      "reserved_gib": 15.689,
+      "peak_allocated_gib": 15.25,
+      "peak_reserved_gib": 15.689,
+      "system_available_gib": 95.698
+    },
+    {
+      "stage": "optimizer_step_2",
+      "elapsed_s": 111.21,
+      "allocated_gib": 14.724,
+      "reserved_gib": 15.848,
+      "peak_allocated_gib": 15.611,
+      "peak_reserved_gib": 15.848,
+      "system_available_gib": 95.56
+    },
+    {
+      "stage": "evaluation_start",
+      "elapsed_s": 111.21,
+      "allocated_gib": 14.724,
+      "reserved_gib": 15.848,
+      "peak_allocated_gib": 15.611,
+      "peak_reserved_gib": 15.848,
+      "system_available_gib": 95.56
+    },
+    {
+      "stage": "evaluation_end",
+      "elapsed_s": 118.23,
+      "allocated_gib": 14.724,
+      "reserved_gib": 15.854,
+      "peak_allocated_gib": 15.611,
+      "peak_reserved_gib": 15.854,
+      "system_available_gib": 95.645
+    },
+    {
+      "stage": "train_end",
+      "elapsed_s": 118.23,
+      "allocated_gib": 14.724,
+      "reserved_gib": 15.854,
+      "peak_allocated_gib": 15.611,
+      "peak_reserved_gib": 15.854,
+      "system_available_gib": 95.645
+    },
+    {
+      "stage": "evaluation_start",
+      "elapsed_s": 118.23,
+      "allocated_gib": 14.724,
+      "reserved_gib": 15.854,
+      "peak_allocated_gib": 15.611,
+      "peak_reserved_gib": 15.854,
+      "system_available_gib": 95.645
+    },
+    {
+      "stage": "evaluation_end",
+      "elapsed_s": 125.24,
+      "allocated_gib": 14.724,
+      "reserved_gib": 15.854,
+      "peak_allocated_gib": 15.611,
+      "peak_reserved_gib": 15.854,
+      "system_available_gib": 95.807
+    },
+    {
+      "stage": "after_merge_and_save",
+      "elapsed_s": 247.96,
+      "allocated_gib": 14.246,
+      "reserved_gib": 16.361,
+      "peak_allocated_gib": 15.611,
+      "peak_reserved_gib": 16.361,
+      "system_available_gib": 83.3
+    }
+  ],
+  "settings": {
+    "per_device_train_batch_size": 1,
+    "per_device_eval_batch_size": 1,
+    "gradient_accumulation_steps": 1,
+    "max_length": 3072,
+    "max_steps": 2,
+    "gradient_checkpointing": true,
+    "bf16": true
+  },
+  "tokenized_train_lengths": {
+    "min": 408,
+    "max": 1233,
+    "examples": 367
+  },
+  "status": "passed",
+  "elapsed_s": 247.96,
+  "peak_allocated_gib": 15.611,
+  "peak_reserved_gib": 16.361
+}
